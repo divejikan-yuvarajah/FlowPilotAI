@@ -230,7 +230,7 @@ export function AssistantPanel() {
     <Sheet open={isOpen} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="w-full lg:w-[440px] p-0 flex flex-col bg-bg-surface border-l border-border gap-0"
+        className="w-full lg:w-[440px] p-0 flex flex-col bg-bg-surface border-l border-border gap-0 [&>button:first-child]:hidden"
       >
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <SheetHeader className="px-5 py-4 border-b border-border shrink-0">
@@ -245,9 +245,6 @@ export function AssistantPanel() {
                 </p>
                 <p className="text-[10px] text-ink-muted">Ask anything about your finances</p>
               </div>
-              <span className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-bg-muted text-ink-muted border border-border uppercase tracking-wide">
-                GPT-4o mini
-              </span>
             </div>
 
             <div className="flex items-center gap-1">
