@@ -42,9 +42,9 @@ const LPOPP_PAYMENTS = [
 function JustPayTab() {
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-ink-secondary">Payment links sent to clients via WhatsApp or email</p>
-        <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white text-sm font-medium transition-colors">
+        <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white text-sm font-medium transition-colors shrink-0">
           <Plus className="h-3.5 w-3.5" /> New link
         </button>
       </div>
@@ -75,9 +75,9 @@ function JustPayTab() {
 function QrCodesTab() {
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-ink-secondary">SeylanPay QR codes for walk-in or display payments</p>
-        <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white text-sm font-medium transition-colors">
+        <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white text-sm font-medium transition-colors shrink-0">
           <Plus className="h-3.5 w-3.5" /> Generate QR
         </button>
       </div>
