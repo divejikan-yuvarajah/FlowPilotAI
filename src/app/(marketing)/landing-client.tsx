@@ -746,7 +746,7 @@ function Footer() {
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-bg-base text-ink-primary antialiased">
+    <div className="h-screen overflow-y-auto bg-bg-base text-ink-primary antialiased">
       <Nav />
       <main>
         <Hero />

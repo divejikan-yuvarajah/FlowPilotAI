@@ -8,7 +8,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen overflow-y-auto flex">
       {/* ── Left column: form ─────────────────────────────────────────── */}
       <div className="flex flex-col flex-1 lg:max-w-[480px] bg-bg-base px-6 py-10 lg:px-12">
         {/* Logo */}

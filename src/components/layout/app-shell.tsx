@@ -62,7 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <TopNav onMenuClick={() => setMobileOpen(true)} />
         <ActivityTicker />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto overscroll-contain">
           <div className="max-w-[1440px] mx-auto px-4 sm:px-8 py-6">
             <Suspense fallback={PAGE_SKELETON}>
               {children}

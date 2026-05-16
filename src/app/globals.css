@@ -145,6 +145,14 @@
     @apply border-border;
   }
 
+  /* Lock the document so only the app shell's inner scroll containers scroll.
+     Without this, hovering outside the main scroll area falls back to the body scroll. */
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body {
     @apply bg-bg-base text-ink-primary font-sans antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
