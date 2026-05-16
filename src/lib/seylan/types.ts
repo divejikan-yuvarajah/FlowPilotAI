@@ -1,16 +1,29 @@
-// ─── Balance ─────────────────────────────────────────────────────────────────
+/**
+ * FlowPilot AI — Seylan Bank type definitions.
+ *
+ * Unified shape used by BOTH the live client (real Seylan sandbox)
+ * and the simulator. New shape introduced for live integration.
+ */
+
+// ─── Account ──────────────────────────────────────────────────────────────────
 
 export interface SeylanBalance {
-  balance: number;
-  asOf: string;         // ISO-8601 timestamp
-  currency: "LKR";
-  accountNumber: string;
+  balance: number;          // current available balance
+  ledgerBalance: number;    // total ledger balance
+  currency: string;         // e.g. "LKR"
+  accountNumber: string;    // masked: "****1234"
+  accountHolder?: string;   // customer full name
+  asOf: string;             // ISO timestamp
 }
 
-// ─── Transaction ──────────────────────────────────────────────────────────────
+// ─── Transactions ─────────────────────────────────────────────────────────────
 
 export type TransactionType = "credit" | "debit";
 
+/**
+ * Legacy category type (kept for fixture/seed compatibility). Live Seylan API
+ * does not categorise — categorisation happens server-side via the AI engine.
+ */
 export type TransactionCategory =
   | "inventory"
   | "salaries"
@@ -21,105 +34,108 @@ export type TransactionCategory =
   | "marketing"
   | "taxes"
   | "client_payment"
-  | "other";
+  | "other"
+  | string;
 
 export interface SeylanTransaction {
-  id: string;
-  postedAt: string;         // ISO-8601 timestamp
+  id: string;                       // unique event key from Seylan
+  postedAt: string;                 // ISO timestamp
   type: TransactionType;
-  amount: number;           // always positive; direction from `type`
-  reference: string;        // bank reference number
-  counterparty: string;     // name of paying/receiving party
-  description: string;
-  category?: TransactionCategory;
+  amount: number;                   // positive; direction is in `type`
+  balanceAfter?: number;
+  reference?: string;
+  description?: string;
+  counterparty?: string | null;
+  transactionCode?: string;
+  valueDate?: string;
+  category?: TransactionCategory;   // legacy: only present in fixtures
 }
 
-// ─── CEFTS (Common Electronic Fund Transfer Switch) ──────────────────────────
+// ─── Transfers ────────────────────────────────────────────────────────────────
+
+export interface TransferResult {
+  status: "completed" | "failed" | "pending";
+  externalRef?: string;
+  transactionId?: string;
+  approvalNumber?: string;
+  completedAt?: string;
+  reason?: string;
+  code?: string;
+  responseDesc?: string;
+}
 
 export interface CEFTSTransferRequest {
-  toAccountNumber: string;
-  toBankCode: string;       // e.g. "7072" = Seylan, "7010" = BOC
-  toAccountName: string;
+  userId: string;
+  destinationAccount?: string;
+  destinationBankCode?: string;
+  recipientName: string;
   amount: number;
-  reference: string;        // max 35 chars
-  narration: string;
+  reference: string;
 }
 
-export interface CEFTSTransferResult {
-  transactionId: string;
-  status: "success" | "failed" | "pending";
-  failureReason?: string;
-  processedAt: string;      // ISO-8601
-  fee: number;              // CEFTS fee in LKR
+export interface InternalTransferRequest {
+  userId: string;
+  destinationAccount?: string;
+  amount: number;
+  reference: string;
+  sourceNarration?: string;
+  destNarration?: string;
 }
 
-// ─── JustPay payment link ─────────────────────────────────────────────────────
+// ─── JustPay (simulator-only) ─────────────────────────────────────────────────
 
 export interface JustPayLinkRequest {
   amount: number;
-  description: string;
-  expiresIn?: number;       // seconds, default 86400 (24h)
-  metadata?: Record<string, string>;
+  description?: string;
+  expiresIn?: number;          // seconds
   customerEmail?: string;
   customerPhone?: string;
 }
 
 export interface JustPayLinkResult {
-  linkId: string;
-  url: string;              // https://justpay.lk/pay/<linkId>
-  expiresAt: string;        // ISO-8601
-  qrData?: string;          // QR payload for the same link
+  paymentLink: string;
+  expiresAt: string;
+  qrPayload?: string;
+  // Legacy aliases (kept for backward-compat with existing callers)
+  url?: string;
+  linkId?: string;
+  qrData?: string;
 }
 
-// ─── Merchant QR ─────────────────────────────────────────────────────────────
+// ─── Merchant QR (simulator-only) ─────────────────────────────────────────────
 
 export interface MerchantQRRequest {
-  amount: number;           // fixed amount, or 0 for open amount
-  reference: string;
+  amount: number;
+  reference?: string;
   merchantName: string;
   note?: string;
 }
 
 export interface MerchantQRResult {
-  qrData: string;           // raw QR string (EMVCo / LankaPay format)
-  imageUrl?: string;        // base64 PNG data-URL
-  expiresAt: string;        // ISO-8601
+  qrImageUrl: string;
+  qrPayload: string;
+  // Legacy aliases
+  qrData?: string;
+  expiresAt?: string;
 }
 
-// ─── Government Payments (EPF / ETF / VAT / IRD) ─────────────────────────────
+// ─── Government payments (simulator-only) ─────────────────────────────────────
 
 export type GovtTaxType = "EPF" | "ETF" | "VAT" | "IRD";
 
 export interface GovtPaymentRequest {
   taxType: GovtTaxType;
   amount: number;
-  period: string;           // e.g. "2026-04" for April 2026
-  reference: string;        // employer/taxpayer reference number
-  narration?: string;
+  period: string;
+  reference: string;
 }
 
 export interface GovtPaymentResult {
   paymentId: string;
   taxType: GovtTaxType;
   status: "success" | "failed";
-  failureReason?: string;
   receiptNumber: string;
-  processedAt: string;      // ISO-8601
+  processedAt: string;
   amount: number;
-}
-
-// ─── Unified client interface ─────────────────────────────────────────────────
-
-export interface SeylanClient {
-  getBalance(): Promise<SeylanBalance>;
-  getTransactions(params?: {
-    from?: string;
-    to?: string;
-    limit?: number;
-    type?: TransactionType;
-  }): Promise<SeylanTransaction[]>;
-  transfer(request: CEFTSTransferRequest): Promise<CEFTSTransferResult>;
-  createJustPayLink(request: JustPayLinkRequest): Promise<JustPayLinkResult>;
-  createMerchantQR(request: MerchantQRRequest): Promise<MerchantQRResult>;
-  payGovt(request: GovtPaymentRequest): Promise<GovtPaymentResult>;
+  failureReason?: string;
 }

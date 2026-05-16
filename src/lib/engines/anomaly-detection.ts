@@ -68,7 +68,7 @@ export function buildBaselines(
   for (const txn of transactions) {
     if (txn.type !== "debit") continue;
     const category = txn.category ?? "other";
-    const vendor = txn.counterparty;
+    const vendor = txn.counterparty ?? "unknown";
     const key = `${category}::${vendor.toLowerCase()}`;
 
     const existing = map.get(key);
@@ -107,7 +107,7 @@ export function detectAnomalies(
 
   for (const txn of debits) {
     const category = txn.category ?? "other";
-    const vendor = txn.counterparty;
+    const vendor = txn.counterparty ?? "unknown";
     const key = `${category}::${vendor.toLowerCase()}`;
 
     const baseline = baselineIndex.get(key);

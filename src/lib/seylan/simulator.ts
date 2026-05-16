@@ -1,17 +1,23 @@
 /**
  * Seylan Bank Simulator
  *
- * Provides a realistic in-memory simulation of the Seylan Bank API.
- * The virtual balance burns down at ~LKR 18,500/day to simulate
- * the cash-flow stress scenario shown in the War Room.
+ * Realistic in-memory simulation used as both:
+ *   (a) the default when SEYLAN_MODE=simulator
+ *   (b) the fallback when SEYLAN_MODE=live but the sandbox is unreachable
+ *
+ * The virtual balance burns down at ~LKR 18,500/day to demo the
+ * cash-flow stress scenario in the War Room.
+ *
+ * Exports MATCH the live client interface (named functions), so the
+ * router can swap implementations without consumer changes.
  */
 
 import type {
   SeylanBalance,
-  SeylanClient,
   SeylanTransaction,
+  TransferResult,
   CEFTSTransferRequest,
-  CEFTSTransferResult,
+  InternalTransferRequest,
   JustPayLinkRequest,
   JustPayLinkResult,
   MerchantQRRequest,
@@ -21,26 +27,23 @@ import type {
 } from "./types";
 import getFixtureTransactions from "./fixtures/transactions";
 
-// ─── Virtual balance module state ─────────────────────────────────────────────
+// ─── Virtual balance ──────────────────────────────────────────────────────────
 
 const INITIAL_BALANCE = 1_247_500;
-const BURN_RATE_PER_DAY = 18_500; // LKR/day
+const BURN_RATE_PER_DAY = 18_500;
 const BURN_RATE_PER_MS = BURN_RATE_PER_DAY / (24 * 60 * 60 * 1000);
 
 const ACCOUNT_NUMBER = "0290-1006-1247";
-const BANK_CODE = "7072"; // Seylan Bank
+const BANK_CODE = "7287";
 
-// Track the baseline so burn is relative to server start time
 const _startTime = Date.now();
-const _pendingTransfers: CEFTSTransferResult[] = [];
 
 function getCurrentBalance(): number {
   const elapsed = Date.now() - _startTime;
-  const burned = Math.floor(elapsed * BURN_RATE_PER_MS);
-  return Math.max(0, INITIAL_BALANCE - burned);
+  return Math.max(0, INITIAL_BALANCE - Math.floor(elapsed * BURN_RATE_PER_MS));
 }
 
-// ─── Utility helpers ──────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function simId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)
@@ -57,92 +60,112 @@ function nowIso(): string {
 }
 
 function shortDelay(): Promise<void> {
-  // Simulate ~120-350 ms API latency
   return new Promise((res) =>
     setTimeout(res, 120 + Math.floor(Math.random() * 230)),
   );
 }
 
-// ─── Simulator implementation ─────────────────────────────────────────────────
+// ─── Live-compatible exports ──────────────────────────────────────────────────
 
-async function getBalance(): Promise<SeylanBalance> {
+export async function getBalance(_userId?: string): Promise<SeylanBalance> {
   await shortDelay();
+  const bal = getCurrentBalance();
   return {
-    balance: getCurrentBalance(),
-    asOf: nowIso(),
+    balance: bal,
+    ledgerBalance: bal + 25_000, // simulate float
     currency: "LKR",
-    accountNumber: ACCOUNT_NUMBER,
+    accountNumber: `****${ACCOUNT_NUMBER.slice(-4)}`,
+    accountHolder: "FlowPilot AI Demo Business (Pvt) Ltd",
+    asOf: nowIso(),
   };
 }
 
-async function getTransactions(params?: {
-  from?: string;
-  to?: string;
-  limit?: number;
-  type?: "credit" | "debit";
-}): Promise<SeylanTransaction[]> {
+export async function listTransactions(
+  _userId?: string,
+  options?: {
+    numberOfTransactions?: number;
+    startDate?: Date;
+    endDate?: Date;
+  },
+): Promise<SeylanTransaction[]> {
   await shortDelay();
   let txns = getFixtureTransactions();
 
-  if (params?.from) {
-    const from = new Date(params.from).getTime();
+  if (options?.startDate) {
+    const from = options.startDate.getTime();
     txns = txns.filter((t) => new Date(t.postedAt).getTime() >= from);
   }
-  if (params?.to) {
-    const to = new Date(params.to).getTime();
+  if (options?.endDate) {
+    const to = options.endDate.getTime();
     txns = txns.filter((t) => new Date(t.postedAt).getTime() <= to);
   }
-  if (params?.type) {
-    txns = txns.filter((t) => t.type === params.type);
-  }
-
-  return txns.slice(0, params?.limit ?? 100);
+  const limit = options?.numberOfTransactions ?? 100;
+  return txns.slice(0, limit);
 }
 
-async function transfer(
-  request: CEFTSTransferRequest,
-): Promise<CEFTSTransferResult> {
+export async function initiateCEFTSTransfer(
+  args: CEFTSTransferRequest,
+): Promise<TransferResult> {
   await shortDelay();
-
-  // Reject if balance would go negative
-  if (request.amount > getCurrentBalance()) {
-    const result: CEFTSTransferResult = {
-      transactionId: simId("CEFTS"),
+  if (args.amount > getCurrentBalance()) {
+    return {
       status: "failed",
-      failureReason: "Insufficient funds",
-      processedAt: nowIso(),
-      fee: 0,
+      reason: "Insufficient funds (simulator)",
+      code: "SIM-INSUFFICIENT",
     };
-    return result;
   }
-
-  const result: CEFTSTransferResult = {
-    transactionId: simId("CEFTS"),
-    status: "success",
-    processedAt: nowIso(),
-    fee: request.amount <= 500_000 ? 25 : 50, // LKR CEFTS fee tiers
+  return {
+    status: "completed",
+    externalRef: simId("CEFTS-SIM"),
+    transactionId: simId("TXN"),
+    approvalNumber: Math.floor(100000 + Math.random() * 900000).toString(),
+    completedAt: nowIso(),
+    responseDesc: "Simulated CEFTS transfer completed",
   };
-
-  _pendingTransfers.push(result);
-  return result;
 }
 
-async function createJustPayLink(
+export async function initiateInternalTransfer(
+  args: InternalTransferRequest,
+): Promise<TransferResult> {
+  await shortDelay();
+  if (args.amount > getCurrentBalance()) {
+    return {
+      status: "failed",
+      reason: "Insufficient funds (simulator)",
+      code: "SIM-INSUFFICIENT",
+    };
+  }
+  return {
+    status: "completed",
+    externalRef: simId("INT-SIM"),
+    completedAt: nowIso(),
+    responseDesc: "Simulated internal transfer completed",
+  };
+}
+
+// ─── Simulator-only flows ─────────────────────────────────────────────────────
+
+export async function generateJustPayLink(
   request: JustPayLinkRequest,
 ): Promise<JustPayLinkResult> {
   await shortDelay();
   const linkId = simId("JP");
-  const expiresIn = request.expiresIn ?? 86400;
+  const expiresIn = request.expiresIn ?? 86_400;
+  const url = `https://justpay.lk/pay/${linkId}`;
+  const qrPayload = `00020101021226${linkId}5204000053033445802LK5910FlowPilot6007Colombo6304ABCD`;
 
   return {
-    linkId,
-    url: `https://justpay.lk/pay/${linkId}`,
+    paymentLink: url,
     expiresAt: futureIso(expiresIn),
-    qrData: `00020101021226${linkId}5204000053033445802LK5910FlowPilot6007Colombo6304ABCD`,
+    qrPayload,
+    // Legacy aliases
+    url,
+    linkId,
+    qrData: qrPayload,
   };
 }
 
-async function createMerchantQR(
+export async function generateMerchantQR(
   request: MerchantQRRequest,
 ): Promise<MerchantQRResult> {
   await shortDelay();
@@ -152,7 +175,7 @@ async function createMerchantQR(
       ? `54${String(request.amount.toFixed(2).length).padStart(2, "0")}${request.amount.toFixed(2)}`
       : "";
 
-  const qrData = [
+  const qrPayload = [
     "000201",
     "010211",
     `26${String(BANK_CODE.length + 4).padStart(2, "0")}0004${BANK_CODE}`,
@@ -164,28 +187,31 @@ async function createMerchantQR(
   ].join("");
 
   return {
-    qrData,
-    expiresAt: futureIso(3600), // QR valid 1 hour
+    qrPayload,
+    qrImageUrl: `data:image/svg+xml;utf8,${encodeURIComponent(
+      `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='50' text-anchor='middle' font-size='6'>${qrPayload.slice(0, 40)}</text></svg>`,
+    )}`,
+    // Legacy aliases
+    qrData: qrPayload,
+    expiresAt: futureIso(3600),
   };
 }
 
-async function payGovt(
+export async function scheduleGovtPayment(
   request: GovtPaymentRequest,
 ): Promise<GovtPaymentResult> {
   await shortDelay();
-
   if (request.amount > getCurrentBalance()) {
     return {
       paymentId: simId("GOVT"),
       taxType: request.taxType,
       status: "failed",
-      failureReason: "Insufficient funds",
       receiptNumber: "",
       processedAt: nowIso(),
       amount: request.amount,
+      failureReason: "Insufficient funds",
     };
   }
-
   return {
     paymentId: simId("GOVT"),
     taxType: request.taxType,
@@ -196,13 +222,17 @@ async function payGovt(
   };
 }
 
-// ─── Export as SeylanClient ───────────────────────────────────────────────────
+export async function checkHealth(): Promise<boolean> {
+  return true;
+}
 
-export const seylanSimulator: SeylanClient = {
-  getBalance,
-  getTransactions,
-  transfer,
-  createJustPayLink,
-  createMerchantQR,
-  payGovt,
-};
+// ─── Legacy aliases kept for backward compatibility ──────────────────────────
+//
+// Some pre-existing consumers (seed route) still call the old method names.
+// Keep these as aliases so we don't have to touch them.
+
+export const getTransactions = listTransactions;
+export const transfer = initiateCEFTSTransfer;
+export const createJustPayLink = generateJustPayLink;
+export const createMerchantQR = generateMerchantQR;
+export const payGovt = scheduleGovtPayment;

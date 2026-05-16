@@ -112,17 +112,18 @@ function computeBaselines(transactions: SeylanTransaction[]): BaselineRow[] {
     if (t.type !== "debit") continue;
     const age = now - new Date(t.postedAt).getTime();
     const cat = t.category ?? "other";
-    const vendor = t.counterparty;
+    const vendor = t.counterparty ?? "unknown";
     const key = `${cat}::${vendor}`;
 
-    let g = groups.get(key);
-    if (!g) {
-      g = { cat, vendor, all: [], d30: [], d60: [] };
-      groups.set(key, g);
+    const existing = groups.get(key);
+    if (existing) {
+      existing.all.push(t.amount);
+      if (age <= ms30) existing.d30.push(t.amount);
+      if (age <= ms60) existing.d60.push(t.amount);
+    } else {
+      const fresh = { cat, vendor, all: [t.amount], d30: age <= ms30 ? [t.amount] : [], d60: age <= ms60 ? [t.amount] : [] };
+      groups.set(key, fresh);
     }
-    g.all.push(t.amount);
-    if (age <= ms30) g.d30.push(t.amount);
-    if (age <= ms60) g.d60.push(t.amount);
   }
 
   const avg = (arr: number[], fallback: number[]) => {

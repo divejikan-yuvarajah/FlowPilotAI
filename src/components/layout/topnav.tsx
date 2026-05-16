@@ -20,7 +20,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useStressTestStore } from "@/store/stress-test";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +33,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
 // ─── Page title map ────────────────────────────────────────────────────────
@@ -91,34 +97,159 @@ function ThemeToggle() {
   );
 }
 
-// ─── Balance pill ──────────────────────────────────────────────────────────
+// ─── Balance pill (live Seylan data) ───────────────────────────────────────
+
+interface LiveBalance {
+  balance: number;
+  ledgerBalance: number;
+  currency: string;
+  accountNumber: string;
+  accountHolder?: string;
+  asOf: string;
+  cached?: boolean;
+}
 
 function BalancePill() {
-  const { balance, isStressActive } = useStressTestStore();
+  const { balance: stressBalance, isStressActive } = useStressTestStore();
+  const [liveData, setLiveData] = useState<LiveBalance | null>(null);
+  const [lastSync, setLastSync] = useState<number>(Date.now());
+  const [, forceTick] = useState(0); // re-render every 30s to refresh relative time
 
-  return (
+  const fetchBalance = async () => {
+    try {
+      const res = await fetch("/api/seylan/balance", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as LiveBalance;
+      setLiveData(data);
+      setLastSync(Date.now());
+    } catch {
+      // silent fallback — keep showing last known value
+    }
+  };
+
+  useEffect(() => {
+    fetchBalance();
+    const id = setInterval(fetchBalance, 60_000); // poll every 60s
+    return () => clearInterval(id);
+  }, []);
+
+  // tick every 30s so "Xs ago" stays fresh
+  useEffect(() => {
+    const id = setInterval(() => forceTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Stress test overrides live data with simulated value
+  const displayBalance = isStressActive
+    ? stressBalance
+    : (liveData?.balance ?? 0);
+
+  const syncAgeSec = (Date.now() - lastSync) / 1000;
+  const dotColor =
+    syncAgeSec < 90
+      ? "bg-signal-healthy"
+      : syncAgeSec < 180
+        ? "bg-signal-watch"
+        : "bg-signal-danger";
+
+  const TrendIcon = isStressActive ? TrendingDown : TrendingUp;
+  const trendColor = isStressActive ? "text-signal-danger" : "text-signal-healthy";
+
+  const pillContent = (
     <div
       className={cn(
-        "flex items-center gap-1.5 px-3 h-8 rounded-full border transition-colors",
+        "flex items-center gap-2 px-3 h-8 rounded-full border transition-colors cursor-help",
         isStressActive
           ? "border-signal-danger/40 bg-signal-danger/5"
           : "border-border bg-bg-subtle",
       )}
     >
-      {isStressActive ? (
-        <TrendingDown className="h-3.5 w-3.5 text-signal-danger shrink-0" />
-      ) : (
-        <TrendingUp className="h-3.5 w-3.5 text-signal-healthy shrink-0" />
-      )}
+      {/* Live status dot */}
+      <span className="relative flex h-1.5 w-1.5 shrink-0">
+        <span
+          className={cn(
+            "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
+            dotColor,
+          )}
+        />
+        <span
+          className={cn("relative inline-flex rounded-full h-1.5 w-1.5", dotColor)}
+        />
+      </span>
+
+      <TrendIcon className={cn("h-3.5 w-3.5 shrink-0", trendColor)} />
+
       <AnimatedNumber
-        value={balance}
+        value={displayBalance}
         format={(v) => `LKR ${v.toLocaleString()}`}
         className={cn(
           "font-mono text-sm tabular-nums",
           isStressActive ? "text-signal-danger" : "text-ink-primary",
         )}
       />
+
+      {/* LIVE badge */}
+      <span className="text-[10px] px-1.5 py-0.5 bg-signal-healthy/20 text-signal-healthy rounded-full font-semibold tracking-wider shrink-0">
+        LIVE
+      </span>
     </div>
+  );
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type="button" aria-label="Balance details">
+            {pillContent}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="bottom"
+          align="end"
+          className="bg-surface border border-border text-ink-primary p-3 min-w-[240px] shadow-xl"
+        >
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between gap-4 pb-2 border-b border-border">
+              <span className="text-ink-muted">Available</span>
+              <span className="font-mono font-semibold text-ink-primary tabular-nums">
+                LKR {(liveData?.balance ?? 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-ink-muted">Ledger</span>
+              <span className="font-mono text-ink-secondary tabular-nums">
+                LKR {(liveData?.ledgerBalance ?? 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-ink-muted">Account</span>
+              <span className="font-mono text-ink-secondary">
+                {liveData?.accountNumber ?? "—"}
+              </span>
+            </div>
+            {liveData?.accountHolder && (
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-ink-muted">Holder</span>
+                <span className="text-ink-secondary truncate max-w-[140px]">
+                  {liveData.accountHolder}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-4 pt-2 border-t border-border">
+              <span className="text-ink-muted">Last synced</span>
+              <span className={cn("font-medium tabular-nums", dotColor.replace("bg-", "text-"))}>
+                {formatDistanceToNow(new Date(lastSync), { addSuffix: true })}
+              </span>
+            </div>
+            {isStressActive && (
+              <p className="text-signal-danger text-[10px] italic">
+                Stress test active — displaying simulated balance
+              </p>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 

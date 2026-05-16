@@ -1,86 +1,38 @@
 import { NextResponse } from "next/server";
-import { createClient as createSupabaseClient } from "@/lib/supabase/server";
-import { seylan } from "@/lib/seylan/client";
-import type { SeylanBalance } from "@/lib/seylan/client";
+import { createClient } from "@/lib/supabase/server";
+import { seylan, type SeylanBalance } from "@/lib/seylan/client";
 
-// ─── In-memory cache (per-user, 60 s TTL) ────────────────────────────────────
-
-interface CacheEntry {
-  balance: SeylanBalance;
-  cachedAt: number;
-}
-
-const cache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 60_000; // 60 seconds
-
-function getCached(userId: string): SeylanBalance | null {
-  const entry = cache.get(userId);
-  if (!entry) return null;
-  if (Date.now() - entry.cachedAt > CACHE_TTL_MS) {
-    cache.delete(userId);
-    return null;
-  }
-  return entry.balance;
-}
-
-function setCached(userId: string, balance: SeylanBalance): void {
-  cache.set(userId, { balance, cachedAt: Date.now() });
-}
-
-// ─── Route handler ────────────────────────────────────────────────────────────
+// In-memory cache to avoid hammering the sandbox
+const cache = new Map<string, { data: SeylanBalance; expiresAt: number }>();
+const TTL_MS = 30_000;
 
 export async function GET() {
-  // 1. Authenticate via Supabase
-  const supabase = createSupabaseClient();
+  const supabase = createClient();
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  if (authError || !user) {
+  const cached = cache.get(user.id);
+  if (cached && cached.expiresAt > Date.now()) {
     return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 },
+      { ...cached.data, cached: true },
+      { headers: { "X-Cache": "HIT" } },
     );
   }
 
-  // 2. Check cache
-  const cached = getCached(user.id);
-  if (cached) {
-    return NextResponse.json(
-      { ...cached, cached: true },
-      {
-        status: 200,
-        headers: {
-          "Cache-Control": "private, max-age=60",
-          "X-Cache": "HIT",
-        },
-      },
-    );
-  }
-
-  // 3. Fetch from Seylan (simulator or live)
   try {
-    const balance = await seylan.getBalance();
-    setCached(user.id, balance);
-
+    const balance = await seylan.getBalance(user.id);
+    cache.set(user.id, { data: balance, expiresAt: Date.now() + TTL_MS });
     return NextResponse.json(
       { ...balance, cached: false },
-      {
-        status: 200,
-        headers: {
-          "Cache-Control": "private, max-age=60",
-          "X-Cache": "MISS",
-        },
-      },
+      { headers: { "X-Cache": "MISS" } },
     );
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to fetch balance";
-
-    return NextResponse.json(
-      { error: message },
-      { status: 502 },
-    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to fetch balance";
+    console.error("Balance API error:", msg);
+    return NextResponse.json({ error: msg }, { status: 502 });
   }
 }
