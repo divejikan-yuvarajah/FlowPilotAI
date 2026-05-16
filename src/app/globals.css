@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+
+    /* ─── FlowPilot Design Tokens (Dark-first) ──────────────────────────── */
+
+    /* Background */
+    --bg-base: 224 71% 4%;
+    --bg-subtle: 222 47% 8%;
+    --bg-muted: 217 33% 12%;
+    --bg-emphasis: 215 20% 65%;
+
+    /* Ink / Text */
+    --ink-primary: 210 40% 98%;
+    --ink-secondary: 215 20% 65%;
+    --ink-muted: 215 16% 47%;
+    --ink-inverted: 224 71% 4%;
+
+    /* Brand (violet-indigo) */
+    --brand: 243 75% 65%;
+    --brand-hover: 243 75% 72%;
+    --brand-muted: 243 75% 15%;
+    --brand-fg: 0 0% 100%;
+
+    /* Semantic */
+    --success: 142 71% 45%;
+    --success-muted: 142 71% 10%;
+    --warning: 38 92% 50%;
+    --warning-muted: 38 92% 10%;
+    --danger: 0 84% 60%;
+    --danger-muted: 0 84% 10%;
+    --info: 199 89% 48%;
+    --info-muted: 199 89% 10%;
+
+    /* Border / Surface */
+    --border: 217 33% 17%;
+    --border-strong: 215 20% 30%;
+    --surface: 222 47% 8%;
+    --surface-raised: 217 33% 12%;
+    --surface-overlay: 217 33% 14%;
+
+    /* ─── Pilot brand scale ─────────────────────────────────────────────── */
+    --pilot-400: 243 75% 72%;
+    --pilot-500: 243 75% 65%;
+    --pilot-600: 243 75% 55%;
+
+    /* ─── Signal status colors ──────────────────────────────────────────── */
+    --signal-healthy: 142 71% 45%;
+    --signal-watch: 38 92% 50%;
+    --signal-danger: 0 84% 60%;
+    --signal-critical: 0 72% 45%;
+    --signal-ai: 270 70% 65%;
+    --signal-neutral: 215 16% 47%;
+
+    /* ─── Glass surface ─────────────────────────────────────────────────── */
+    --bg-glass: 220 30% 98%;
+
+    /* ─── shadcn/ui compatibility aliases ──────────────────────────────── */
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 243 75% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 12%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 12%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 210 40% 98%;
+    --input: 217 33% 17%;
+    --ring: 243 75% 65%;
+    --radius: 0.5rem;
+  }
+
+  .light {
+    /* ─── FlowPilot Design Tokens (Light override) ──────────────────────── */
+    color-scheme: light;
+
+    --bg-base: 0 0% 100%;
+    --bg-subtle: 220 14% 96%;
+    --bg-muted: 220 13% 91%;
+    --bg-emphasis: 220 9% 46%;
+
+    --ink-primary: 224 71% 4%;
+    --ink-secondary: 220 9% 46%;
+    --ink-muted: 220 9% 64%;
+    --ink-inverted: 0 0% 100%;
+
+    --brand: 243 75% 59%;
+    --brand-hover: 243 75% 52%;
+    --brand-muted: 243 75% 95%;
+    --brand-fg: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-muted: 142 71% 94%;
+    --warning: 38 92% 50%;
+    --warning-muted: 38 92% 95%;
+    --danger: 0 84% 60%;
+    --danger-muted: 0 84% 95%;
+    --info: 199 89% 48%;
+    --info-muted: 199 89% 95%;
+
+    --border: 220 13% 91%;
+    --border-strong: 220 9% 80%;
+    --surface: 0 0% 100%;
+    --surface-raised: 220 14% 98%;
+    --surface-overlay: 220 14% 97%;
+
+    --pilot-400: 243 75% 72%;
+    --pilot-500: 243 75% 59%;
+    --pilot-600: 243 75% 48%;
+
+    --background: 0 0% 100%;
+    --foreground: 224 71% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 224 71% 4%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 224 71% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --input: 220 13% 91%;
+    --ring: 243 75% 59%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-bg-base text-ink-primary font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  ::selection {
+    @apply bg-pilot-500/30 text-ink-primary;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .glass {
+    @apply backdrop-blur-xl border border-white/[0.06];
+    background-color: hsl(var(--bg-glass) / 0.04);
+  }
+
+  .glass-strong {
+    @apply bg-surface/90 backdrop-blur-xl border border-border shadow;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--bg-muted)) 0%,
+      hsl(var(--bg-emphasis) / 0.3) 50%,
+      hsl(var(--bg-muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
