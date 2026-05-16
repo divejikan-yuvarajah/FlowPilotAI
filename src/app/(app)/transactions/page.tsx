@@ -100,35 +100,30 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-6 pb-8">
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="font-display text-2xl font-semibold text-ink-primary flex items-center gap-2">
-              Transaction Feed
-              <span className="text-[10px] px-1.5 py-0.5 bg-signal-healthy/20 text-signal-healthy rounded-full font-semibold tracking-wider">
-                LIVE
-              </span>
-            </h1>
-            <p className="text-sm text-ink-secondary mt-0.5">
-              Real-time from Seylan Bank sandbox · last 50 transactions
-            </p>
-          </div>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-xl sm:text-2xl font-semibold text-ink-primary flex items-center gap-2">
+            Transaction Feed
+            <span className="text-[10px] px-1.5 py-0.5 bg-signal-healthy/20 text-signal-healthy rounded-full font-semibold tracking-wider">
+              LIVE
+            </span>
+          </h1>
+          <p className="text-xs sm:text-sm text-ink-secondary mt-0.5">
+            Seylan Bank · last 50 transactions
+          </p>
         </div>
-
         <button
           onClick={() => fetchTxns(true)}
           disabled={refreshing || loading}
-          className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-bg-subtle text-sm text-ink-secondary hover:text-ink-primary hover:bg-bg-raised transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-md border border-border bg-bg-subtle text-xs sm:text-sm text-ink-secondary hover:text-ink-primary hover:bg-bg-raised transition-colors disabled:opacity-50 shrink-0"
         >
-          <RefreshCw
-            className={cn("h-3.5 w-3.5", refreshing && "animate-spin")}
-          />
+          <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
           Refresh
         </button>
       </div>
 
-      {/* ── Filter bar ────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2">
+      {/* ── Filter bar — horizontally scrollable on mobile ─────────────────── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {FILTER_CONFIG.map(({ key, label }) => {
           const count =
             key === "all"          ? txns.length :
@@ -143,7 +138,7 @@ export default function TransactionsPage() {
               key={key}
               onClick={() => setFilter(key)}
               className={cn(
-                "flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-medium transition-colors border",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors border shrink-0",
                 active
                   ? "bg-pilot-500/10 border-pilot-500/40 text-pilot-400"
                   : "bg-bg-subtle border-border text-ink-secondary hover:bg-bg-raised hover:text-ink-primary",
@@ -167,30 +162,18 @@ export default function TransactionsPage() {
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
       <div className="bg-surface border border-border rounded-lg overflow-hidden">
-        {/* Column headers */}
-        <div className="grid grid-cols-[100px_30px_1fr_90px_120px_80px] gap-3 items-center px-5 py-3 border-b border-border text-xs text-ink-muted uppercase tracking-wider font-medium">
-          <span>Date</span>
-          <span />
-          <span>Description</span>
-          <span>Category</span>
-          <span className="text-right">Amount</span>
-          <span className="text-right">Balance</span>
-        </div>
 
-        {/* Loading */}
+        {/* Loading skeletons */}
         {loading && (
           <div className="divide-y divide-border">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-[100px_30px_1fr_90px_120px_80px] gap-3 items-center px-5 py-3"
-              >
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3">
+                <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-2.5 w-1/3" />
+                </div>
                 <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-4 w-4 rounded-full" />
-                <Skeleton className="h-3 w-2/3" />
-                <Skeleton className="h-3 w-16" />
-                <Skeleton className="h-3 w-24 ml-auto" />
-                <Skeleton className="h-3 w-20 ml-auto" />
               </div>
             ))}
           </div>
@@ -207,94 +190,67 @@ export default function TransactionsPage() {
         {/* Empty */}
         {!loading && !error && filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-2">
-            <p className="text-sm text-ink-muted">
-              No transactions to display
-            </p>
-            <button
-              onClick={() => fetchTxns(true)}
-              className="text-xs text-pilot-500 hover:text-pilot-400 transition-colors"
-            >
+            <p className="text-sm text-ink-muted">No transactions to display</p>
+            <button onClick={() => fetchTxns(true)} className="text-xs text-pilot-500 hover:text-pilot-400 transition-colors">
               Try refreshing
             </button>
           </div>
         )}
 
-        {/* Rows */}
+        {/* Rows — card style on mobile, table on sm+ */}
         {!loading && !error && filtered.length > 0 && (
           <div className="divide-y divide-border">
             {filtered.map((t) => {
               const isCredit = t.type === "credit";
               const Icon = isCredit ? ArrowDownLeft : ArrowUpRight;
               const sign = isCredit ? "+" : "−";
-              const amountColor = isCredit
-                ? "text-signal-healthy"
-                : "text-signal-danger";
+              const amountColor = isCredit ? "text-signal-healthy" : "text-signal-danger";
 
               return (
                 <div
                   key={t.id}
                   className={cn(
-                    "grid grid-cols-[100px_30px_1fr_90px_120px_80px] gap-3 items-center px-5 py-3 hover:bg-bg-raised transition-colors",
+                    "flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-bg-raised transition-colors",
                     t.isAnomaly && "bg-signal-watch/5",
                   )}
                 >
-                  {/* Date */}
-                  <div className="text-xs">
-                    <p className="text-ink-secondary tabular-nums">
-                      {format(new Date(t.postedAt), "MMM d")}
-                    </p>
-                    <p className="text-ink-muted tabular-nums">
-                      {format(new Date(t.postedAt), "h:mm a")}
-                    </p>
+                  {/* Type icon */}
+                  <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", isCredit ? "bg-signal-healthy/10" : "bg-signal-danger/10")}>
+                    <Icon className={cn("h-4 w-4", amountColor)} />
                   </div>
 
-                  {/* Icon */}
-                  <div
-                    className={cn(
-                      "h-6 w-6 rounded-full flex items-center justify-center shrink-0",
-                      isCredit
-                        ? "bg-signal-healthy/10"
-                        : "bg-signal-danger/10",
-                    )}
-                  >
-                    <Icon className={cn("h-3.5 w-3.5", amountColor)} />
-                  </div>
-
-                  {/* Description */}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-sm text-ink-primary truncate">
+                  {/* Description + meta */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-sm font-medium text-ink-primary truncate">
                         {t.description || t.counterparty || t.transactionCode || "Transaction"}
                       </p>
                       {t.isAnomaly && <AlertCircle className="h-3 w-3 text-signal-watch shrink-0" />}
                       {t.matchedInvoiceId && <LinkIcon className="h-3 w-3 text-pilot-400 shrink-0" />}
                     </div>
-                    {t.reference && (
-                      <p className="text-xs text-ink-tertiary truncate">Ref: {t.reference}</p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="text-[11px] text-ink-muted tabular-nums">
+                        {format(new Date(t.postedAt), "MMM d, h:mm a")}
+                      </span>
+                      {t.category && (
+                        <span className={cn("inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium capitalize", CATEGORY_COLORS[t.category] ?? CATEGORY_COLORS.other)}>
+                          {t.category}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Amount + balance */}
+                  <div className="text-right shrink-0">
+                    <p className={cn("font-mono text-sm font-semibold tabular-nums", amountColor)}>
+                      {sign}LKR {(t.amount / 1000).toFixed(1)}k
+                    </p>
+                    {t.balanceAfter !== undefined && (
+                      <p className="font-mono text-[10px] text-ink-muted tabular-nums mt-0.5 hidden sm:block">
+                        Bal: {(t.balanceAfter / 1000).toFixed(0)}k
+                      </p>
                     )}
                   </div>
-
-                  {/* Category badge */}
-                  <div>
-                    {t.category ? (
-                      <span className={cn(
-                        "inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium capitalize",
-                        CATEGORY_COLORS[t.category] ?? CATEGORY_COLORS.other,
-                      )}>
-                        {t.category}
-                      </span>
-                    ) : <span className="text-[11px] text-ink-muted">—</span>}
-                  </div>
-
-                  {/* Amount */}
-                  <p className={cn("font-mono text-sm font-semibold tabular-nums text-right", amountColor)}>
-                    {sign}LKR {t.amount.toLocaleString()}
-                  </p>
-
-                  {/* Running balance */}
-                  <p className="font-mono text-xs text-ink-muted tabular-nums text-right">
-                    {t.balanceAfter !== undefined ? `LKR ${t.balanceAfter.toLocaleString()}` : "—"}
-                  </p>
                 </div>
               );
             })}
