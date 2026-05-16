@@ -52,7 +52,7 @@ const NAV: NavSection[] = [
     items: [
       { label: "War Room", icon: Home, href: "/war-room" },
       { label: "AI CFO Dashboard", icon: Briefcase, href: "/cfo" },
-      { label: "Business Health", icon: Activity, href: "/health", soon: true },
+      { label: "Business Health", icon: Activity, href: "/health" },
     ],
   },
   {
@@ -60,7 +60,7 @@ const NAV: NavSection[] = [
     items: [
       { label: "Cash Flow Timeline", icon: TrendingUp, href: "/timeline" },
       { label: "Runway Simulator", icon: FlaskConical, href: "/simulator" },
-      { label: "Cash Flow Calendar", icon: Calendar, href: "/calendar", soon: true },
+      { label: "Cash Flow Calendar", icon: Calendar, href: "/calendar" },
     ],
   },
   {
@@ -83,7 +83,9 @@ const NAV: NavSection[] = [
   },
   {
     title: "Account",
-    items: [{ label: "Settings", icon: Settings, href: "/settings" }],
+    items: [
+      { label: "Settings", icon: Settings, href: "/settings" },
+    ],
   },
 ];
 

@@ -327,9 +327,14 @@ export function AutomationClient({
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-ink-primary">
-            Automation Rules
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-2xl font-semibold text-ink-primary">
+              Automation Rules
+            </h1>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-pilot-500/10 text-pilot-400 border border-pilot-500/20 uppercase tracking-wide">
+              Beta
+            </span>
+          </div>
           <p className="text-sm text-ink-secondary mt-1">
             IF/THEN rules that trigger alerts, messages, and actions automatically
           </p>

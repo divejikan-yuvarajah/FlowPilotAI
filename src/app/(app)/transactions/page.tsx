@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   RefreshCw,
   AlertCircle,
+  Link as LinkIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -22,15 +23,33 @@ interface Txn {
   description?: string;
   counterparty?: string | null;
   transactionCode?: string;
+  category?: string;
+  isAnomaly?: boolean;
+  matchedInvoiceId?: string | null;
 }
 
-type Filter = "all" | "credit" | "debit";
+type Filter = "all" | "credit" | "debit" | "anomaly" | "unreconciled";
 
 const FILTER_CONFIG: { key: Filter; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "credit", label: "Credits" },
-  { key: "debit", label: "Debits" },
+  { key: "all",          label: "All" },
+  { key: "credit",       label: "Credits" },
+  { key: "debit",        label: "Debits" },
+  { key: "anomaly",      label: "Anomalies" },
+  { key: "unreconciled", label: "Unreconciled" },
 ];
+
+const CATEGORY_COLORS: Record<string, string> = {
+  inventory:      "bg-amber-400/10 text-amber-400",
+  logistics:      "bg-sky-400/10 text-sky-400",
+  salaries:       "bg-violet-400/10 text-violet-400",
+  utilities:      "bg-emerald-400/10 text-emerald-400",
+  rent:           "bg-purple-400/10 text-purple-400",
+  marketing:      "bg-rose-400/10 text-rose-400",
+  software:       "bg-orange-400/10 text-orange-400",
+  taxes:          "bg-red-500/10 text-red-400",
+  client_payment: "bg-signal-healthy/10 text-signal-healthy",
+  other:          "bg-slate-400/10 text-slate-400",
+};
 
 export default function TransactionsPage() {
   const [txns, setTxns] = useState<Txn[]>([]);
@@ -69,8 +88,14 @@ export default function TransactionsPage() {
     fetchTxns();
   }, [fetchTxns]);
 
-  const filtered =
-    filter === "all" ? txns : txns.filter((t) => t.type === filter);
+  const filtered = txns.filter((t) => {
+    if (filter === "all") return true;
+    if (filter === "credit") return t.type === "credit";
+    if (filter === "debit") return t.type === "debit";
+    if (filter === "anomaly") return !!t.isAnomaly;
+    if (filter === "unreconciled") return !t.matchedInvoiceId && t.type === "credit";
+    return true;
+  });
 
   return (
     <div className="space-y-6 pb-8">
@@ -106,9 +131,12 @@ export default function TransactionsPage() {
       <div className="flex items-center gap-2">
         {FILTER_CONFIG.map(({ key, label }) => {
           const count =
-            key === "all"
-              ? txns.length
-              : txns.filter((t) => t.type === key).length;
+            key === "all"          ? txns.length :
+            key === "credit"       ? txns.filter((t) => t.type === "credit").length :
+            key === "debit"        ? txns.filter((t) => t.type === "debit").length :
+            key === "anomaly"      ? txns.filter((t) => !!t.isAnomaly).length :
+            key === "unreconciled" ? txns.filter((t) => !t.matchedInvoiceId && t.type === "credit").length :
+            0;
           const active = filter === key;
           return (
             <button
@@ -140,10 +168,11 @@ export default function TransactionsPage() {
       {/* ── Body ──────────────────────────────────────────────────────────── */}
       <div className="bg-surface border border-border rounded-lg overflow-hidden">
         {/* Column headers */}
-        <div className="grid grid-cols-[100px_30px_1fr_140px_120px] gap-4 items-center px-5 py-3 border-b border-border text-xs text-ink-muted uppercase tracking-wider font-medium">
+        <div className="grid grid-cols-[100px_30px_1fr_90px_120px_80px] gap-3 items-center px-5 py-3 border-b border-border text-xs text-ink-muted uppercase tracking-wider font-medium">
           <span>Date</span>
           <span />
           <span>Description</span>
+          <span>Category</span>
           <span className="text-right">Amount</span>
           <span className="text-right">Balance</span>
         </div>
@@ -154,11 +183,12 @@ export default function TransactionsPage() {
             {[...Array(8)].map((_, i) => (
               <div
                 key={i}
-                className="grid grid-cols-[100px_30px_1fr_140px_120px] gap-4 items-center px-5 py-3"
+                className="grid grid-cols-[100px_30px_1fr_90px_120px_80px] gap-3 items-center px-5 py-3"
               >
                 <Skeleton className="h-3 w-20" />
                 <Skeleton className="h-4 w-4 rounded-full" />
                 <Skeleton className="h-3 w-2/3" />
+                <Skeleton className="h-3 w-16" />
                 <Skeleton className="h-3 w-24 ml-auto" />
                 <Skeleton className="h-3 w-20 ml-auto" />
               </div>
@@ -203,7 +233,10 @@ export default function TransactionsPage() {
               return (
                 <div
                   key={t.id}
-                  className="grid grid-cols-[100px_30px_1fr_140px_120px] gap-4 items-center px-5 py-3 hover:bg-bg-raised transition-colors"
+                  className={cn(
+                    "grid grid-cols-[100px_30px_1fr_90px_120px_80px] gap-3 items-center px-5 py-3 hover:bg-bg-raised transition-colors",
+                    t.isAnomaly && "bg-signal-watch/5",
+                  )}
                 >
                   {/* Date */}
                   <div className="text-xs">
@@ -229,34 +262,38 @@ export default function TransactionsPage() {
 
                   {/* Description */}
                   <div className="min-w-0">
-                    <p className="text-sm text-ink-primary truncate">
-                      {t.description ||
-                        t.counterparty ||
-                        t.transactionCode ||
-                        "Transaction"}
-                    </p>
-                    {t.reference && (
-                      <p className="text-xs text-ink-tertiary truncate">
-                        Ref: {t.reference}
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm text-ink-primary truncate">
+                        {t.description || t.counterparty || t.transactionCode || "Transaction"}
                       </p>
+                      {t.isAnomaly && <AlertCircle className="h-3 w-3 text-signal-watch shrink-0" />}
+                      {t.matchedInvoiceId && <LinkIcon className="h-3 w-3 text-pilot-400 shrink-0" />}
+                    </div>
+                    {t.reference && (
+                      <p className="text-xs text-ink-tertiary truncate">Ref: {t.reference}</p>
                     )}
                   </div>
 
+                  {/* Category badge */}
+                  <div>
+                    {t.category ? (
+                      <span className={cn(
+                        "inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium capitalize",
+                        CATEGORY_COLORS[t.category] ?? CATEGORY_COLORS.other,
+                      )}>
+                        {t.category}
+                      </span>
+                    ) : <span className="text-[11px] text-ink-muted">—</span>}
+                  </div>
+
                   {/* Amount */}
-                  <p
-                    className={cn(
-                      "font-mono text-sm font-semibold tabular-nums text-right",
-                      amountColor,
-                    )}
-                  >
+                  <p className={cn("font-mono text-sm font-semibold tabular-nums text-right", amountColor)}>
                     {sign}LKR {t.amount.toLocaleString()}
                   </p>
 
                   {/* Running balance */}
                   <p className="font-mono text-xs text-ink-muted tabular-nums text-right">
-                    {t.balanceAfter !== undefined
-                      ? `LKR ${t.balanceAfter.toLocaleString()}`
-                      : "—"}
+                    {t.balanceAfter !== undefined ? `LKR ${t.balanceAfter.toLocaleString()}` : "—"}
                   </p>
                 </div>
               );
