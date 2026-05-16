@@ -409,30 +409,30 @@ export function RecoveryClient({
   }
 
   return (
-    <div className="grid grid-cols-12 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
       {/* ── LEFT: Message composer ───────────────────────────────────────── */}
-      <div className="col-span-7 space-y-4">
+      <div className="lg:col-span-7 space-y-4">
         <div className="bg-surface border border-border rounded-lg overflow-hidden">
           {/* Language selector */}
-          <div className="px-4 pt-4 pb-3 border-b border-border space-y-2">
-            <div className="flex gap-2">
+          <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-3 border-b border-border space-y-2">
+            <div className="flex gap-1.5 sm:gap-2">
               {LANGUAGE_CONFIG.map(({ key, native, flag }) => (
                 <button
                   key={key}
                   onClick={() => handleLanguageChange(key)}
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md border text-sm font-medium transition-colors",
+                    "flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 rounded-md border text-xs sm:text-sm font-medium transition-colors",
                     language === key
                       ? "bg-pilot-500/20 border-pilot-500 text-pilot-400"
                       : "bg-bg-subtle border-border text-ink-secondary hover:bg-bg-raised hover:text-ink-primary",
                   )}
                 >
-                  <span>{flag}</span>
+                  <span className="text-sm">{flag}</span>
                   <span>{native}</span>
                 </button>
               ))}
             </div>
-            <p className="text-xs text-ink-muted">
+            <p className="text-[11px] text-ink-muted hidden sm:block">
               AI will draft in the selected language. Numbers and technical terms remain in English.
             </p>
           </div>
@@ -444,12 +444,13 @@ export function RecoveryClient({
                 key={s}
                 onClick={() => handleStageChange(s)}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium transition-colors relative",
+                  "flex-1 flex items-center justify-center gap-1 sm:gap-2 py-3 sm:py-3.5 text-xs sm:text-sm font-medium transition-colors relative",
                   stage === s ? color : "text-ink-muted hover:text-ink-secondary",
                 )}
               >
-                <Icon className="h-4 w-4" />
-                {label}
+                <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                <span className="hidden xs:inline sm:inline">{label}</span>
+                <span className="sm:hidden text-[10px] leading-tight text-center">{label.split(" ")[0]}</span>
                 {stage === s && (
                   <motion.div
                     layoutId="tone-underline"
@@ -491,7 +492,7 @@ export function RecoveryClient({
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       className={cn(
-                        "w-full min-h-[300px] bg-bg-subtle rounded-lg p-4 text-sm text-ink-primary",
+                        "w-full min-h-[200px] sm:min-h-[300px] bg-bg-subtle rounded-lg p-3 sm:p-4 text-sm text-ink-primary",
                         "border-l-2 border-l-signal-ai border border-border",
                         "focus:outline-none focus:ring-1 focus:ring-signal-ai/50 resize-none",
                         "leading-relaxed",
@@ -617,8 +618,8 @@ export function RecoveryClient({
         </div>
       </div>
 
-      {/* ── RIGHT: Context panel ─────────────────────────────────────────── */}
-      <div className="col-span-5 space-y-4 lg:sticky lg:top-6 self-start">
+      {/* ── RIGHT: Context panel — shows ABOVE composer on mobile ─────────── */}
+      <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-6 lg:self-start order-first lg:order-last">
         {/* Invoice summary */}
         <div className="bg-surface border border-border rounded-lg overflow-hidden">
           <div className="px-4 py-3 border-b border-border">
@@ -640,7 +641,7 @@ export function RecoveryClient({
 
             {/* Amount */}
             <div>
-              <p className="font-mono text-2xl font-semibold text-ink-primary tabular-nums">
+              <p className="font-mono text-lg sm:text-2xl font-semibold text-ink-primary tabular-nums">
                 LKR {invoice.amount.toLocaleString()}
               </p>
               <p className="text-xs text-ink-muted mt-0.5">{invoice.invoiceNumber}</p>

@@ -104,23 +104,23 @@ export default async function RecoveryPage({ params }: Props) {
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-ink-primary">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="font-display text-xl sm:text-2xl font-semibold text-ink-primary">
             Recovery Center
           </h1>
-          <p className="text-sm text-ink-secondary mt-0.5">
-            {invoice.invoiceNumber} · {invoice.client.name} ·{" "}
+          <p className="text-xs sm:text-sm text-ink-secondary mt-0.5 flex flex-wrap items-center gap-1">
+            <span className="font-medium text-ink-primary">{invoice.invoiceNumber}</span>
+            <span className="text-ink-muted">·</span>
+            <span className="truncate max-w-[120px] sm:max-w-none">{invoice.client.name}</span>
+            <span className="text-ink-muted">·</span>
             <span className={daysOverdue >= 14 ? "text-signal-critical" : daysOverdue >= 7 ? "text-signal-danger" : "text-signal-watch"}>
-              {daysOverdue} days overdue
+              {daysOverdue}d overdue
             </span>
           </p>
         </div>
-        <a
-          href="/overdue"
-          className="text-sm text-ink-muted hover:text-ink-primary transition-colors"
-        >
-          ← Back to Overdue Radar
+        <a href="/overdue" className="text-xs sm:text-sm text-ink-muted hover:text-ink-primary transition-colors shrink-0">
+          ← Back
         </a>
       </div>
 
