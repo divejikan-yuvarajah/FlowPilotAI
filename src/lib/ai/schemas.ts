@@ -71,6 +71,17 @@ export const SurvivalPlanSchema = z.object({
 
 export type SurvivalPlanOutput = z.infer<typeof SurvivalPlanSchema>;
 
+// ─── Supplier Analysis ────────────────────────────────────────────────────────
+
+export const SupplierAnalysisSchema = z.object({
+  relationship_health: z.enum(["excellent", "good", "strained", "critical"]),
+  primary_concern: z.string().min(5),
+  recommended_action: z.string().min(5),
+  estimated_impact: z.enum(["low", "medium", "high"]),
+});
+
+export type SupplierAnalysisOutput = z.infer<typeof SupplierAnalysisSchema>;
+
 // ─── API request schemas (input validation) ───────────────────────────────────
 
 export const AnalyzeRiskRequestSchema = z.object({
@@ -91,4 +102,8 @@ export const SurvivalPlanRequestSchema = z.object({
   defaultedClientIds: z.array(z.string().uuid()).min(1),
   expenseShockPct: z.number().min(0).max(200).default(0),
   revenueShockPct: z.number().min(0).max(100).default(0),
+});
+
+export const SupplierAnalysisRequestSchema = z.object({
+  supplierId: z.string().uuid("supplierId must be a valid UUID"),
 });

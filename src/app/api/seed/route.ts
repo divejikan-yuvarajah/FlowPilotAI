@@ -525,6 +525,210 @@ Burn: LKR ${BURN_DAILY.toLocaleString()}/day. Reply ONLY with a JSON array like 
 
   cachedCount += cacheRows.length;
 
+  // ── STEP 10: Suppliers ────────────────────────────────────────────────────
+
+  const { data: insertedSuppliers, error: supplierErr } = await db
+    .from("suppliers")
+    .insert([
+      {
+        user_id: userId,
+        name: "Lanka Logistics",
+        business_type: "logistics",
+        payment_reliability_score: 64,
+        trend: "worsening",
+        relationship_status: "strained",
+        notes: "We've been 3-5 days late on last 4 invoices. Relationship strained.",
+        ai_relationship_insight: "Consistent late payments are eroding trust. Lanka Logistics may tighten credit terms if pattern continues.",
+      },
+      {
+        user_id: userId,
+        name: "Ceylon Inventory Co",
+        business_type: "inventory",
+        payment_reliability_score: 82,
+        trend: "stable",
+        relationship_status: "active",
+        notes: "Reliable payer relationship. Supplier offers 30-day terms.",
+        ai_relationship_insight: "Strong payment track record. Consider negotiating extended 45-day terms given reliability.",
+      },
+      {
+        user_id: userId,
+        name: "Dialog Axiata",
+        business_type: "utilities",
+        payment_reliability_score: 95,
+        trend: "improving",
+        relationship_status: "excellent",
+        notes: "Auto-debit. Always on time.",
+        ai_relationship_insight: "Auto-debit ensures perfect punctuality. Excellent standing with this critical utility provider.",
+      },
+      {
+        user_id: userId,
+        name: "Office Pro Stationery",
+        business_type: "software",
+        payment_reliability_score: 71,
+        trend: "stable",
+        relationship_status: "active",
+        notes: "Small supplier. Occasionally pay 1-2 days late.",
+        ai_relationship_insight: "Minor delays have been tolerated so far. Keeping payments within 2 days of due date will maintain goodwill.",
+      },
+    ])
+    .select("id, name");
+
+  if (supplierErr) {
+    console.warn("suppliers seed warning:", supplierErr.message);
+  }
+
+  const supplierMap = Object.fromEntries(
+    (insertedSuppliers ?? []).map((s) => [s.name as string, s.id as string]),
+  );
+
+  // ── STEP 11: Supplier obligations ─────────────────────────────────────────
+
+  const obligationRows = supplierMap["Lanka Logistics"] ? [
+    // Lanka Logistics — logistics — 4 obligations, mix of paid-late + overdue
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Lanka Logistics"],
+      reference: "OBL-0095",
+      amount: 48_500,
+      due_date: dateStr(-30),
+      status: "paid",
+      paid_at: tsOffset(-25),  // 5 days late
+      paid_amount: 48_500,
+      description: "Freight charges — March batch",
+    },
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Lanka Logistics"],
+      reference: "OBL-0096",
+      amount: 63_200,
+      due_date: dateStr(-20),
+      status: "paid",
+      paid_at: tsOffset(-16),  // 4 days late
+      paid_amount: 63_200,
+      description: "Warehousing — March",
+    },
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Lanka Logistics"],
+      reference: "OBL-0097",
+      amount: 51_800,
+      due_date: dateStr(-10),
+      status: "paid",
+      paid_at: tsOffset(-7),   // 3 days late
+      paid_amount: 51_800,
+      description: "Last-mile delivery — April batch",
+    },
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Lanka Logistics"],
+      reference: "OBL-0098",
+      amount: 72_400,
+      due_date: dateStr(-5),
+      status: "overdue",
+      paid_at: null,
+      paid_amount: null,
+      description: "April freight — URGENT",
+    },
+    // Ceylon Inventory Co — inventory — 3 obligations, all on time
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Ceylon Inventory Co"],
+      reference: "OBL-0101",
+      amount: 185_000,
+      due_date: dateStr(-15),
+      status: "paid",
+      paid_at: tsOffset(-15),  // on time
+      paid_amount: 185_000,
+      description: "Inventory restock — April",
+    },
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Ceylon Inventory Co"],
+      reference: "OBL-0102",
+      amount: 142_500,
+      due_date: dateStr(7),
+      status: "pending",
+      paid_at: null,
+      paid_amount: null,
+      description: "May inventory order",
+    },
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Ceylon Inventory Co"],
+      reference: "OBL-0103",
+      amount: 96_800,
+      due_date: dateStr(15),
+      status: "pending",
+      paid_at: null,
+      paid_amount: null,
+      description: "Packaging materials — May",
+    },
+    // Dialog Axiata — utilities — always paid via auto-debit
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Dialog Axiata"],
+      reference: "OBL-0110",
+      amount: 12_450,
+      due_date: dateStr(-25),
+      status: "paid",
+      paid_at: tsOffset(-26),  // 1 day early
+      paid_amount: 12_450,
+      description: "Monthly broadband — March",
+    },
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Dialog Axiata"],
+      reference: "OBL-0111",
+      amount: 12_450,
+      due_date: dateStr(5),
+      status: "pending",
+      paid_at: null,
+      paid_amount: null,
+      description: "Monthly broadband — May",
+    },
+    // Office Pro Stationery — occasional 1-2 day delays
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Office Pro Stationery"],
+      reference: "OBL-0120",
+      amount: 18_700,
+      due_date: dateStr(-18),
+      status: "paid",
+      paid_at: tsOffset(-16),  // 2 days late
+      paid_amount: 18_700,
+      description: "Office supplies — Q1",
+    },
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Office Pro Stationery"],
+      reference: "OBL-0121",
+      amount: 22_300,
+      due_date: dateStr(-8),
+      status: "paid",
+      paid_at: tsOffset(-7),   // 1 day late
+      paid_amount: 22_300,
+      description: "Printer cartridges + stationery",
+    },
+    {
+      user_id: userId,
+      supplier_id: supplierMap["Office Pro Stationery"],
+      reference: "OBL-0122",
+      amount: 15_600,
+      due_date: dateStr(3),
+      status: "pending",
+      paid_at: null,
+      paid_amount: null,
+      description: "May office supplies order",
+    },
+  ] : [];
+
+  if (obligationRows.length > 0) {
+    const { error: oblErr } = await db
+      .from("supplier_obligations")
+      .insert(obligationRows);
+    if (oblErr) console.warn("supplier_obligations seed warning:", oblErr.message);
+  }
+
   // ── Done ──────────────────────────────────────────────────────────────────
 
   return NextResponse.json(
@@ -540,6 +744,8 @@ Burn: LKR ${BURN_DAILY.toLocaleString()}/day. Reply ONLY with a JSON array like 
       briefs: 1,
       alerts: alertRows.length,
       cached: cachedCount,
+      suppliers: (insertedSuppliers ?? []).length,
+      supplierObligations: obligationRows.length,
     },
     { status: 201 },
   );

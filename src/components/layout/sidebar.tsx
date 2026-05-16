@@ -17,6 +17,7 @@ import {
   Send,
   Settings,
   Sparkles,
+  Store,
   TrendingUp,
   Workflow,
   Zap,
@@ -75,6 +76,7 @@ const NAV: NavSection[] = [
     items: [
       { label: "Expense Intelligence", icon: Receipt, href: "/expenses" },
       { label: "Payments Hub", icon: Send, href: "/payments" },
+      { label: "Supplier Trust", icon: Store, href: "/suppliers" },
       { label: "Transaction Feed", icon: List, href: "/transactions" },
       { label: "Automation Rules", icon: Workflow, href: "/automation" },
     ],

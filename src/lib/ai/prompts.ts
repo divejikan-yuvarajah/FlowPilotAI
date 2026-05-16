@@ -273,6 +273,75 @@ Generate the daily CFO brief JSON now.
   `.trim();
 }
 
+// ─── Supplier Analysis ────────────────────────────────────────────────────────
+
+export const SUPPLIER_ANALYSIS_SYSTEM = `You are FlowPilot AI's supplier relationship analyst.
+The SME owes money to suppliers. Your job: analyze whether the SME's payment
+behavior is damaging key supplier relationships.
+
+Return ONLY valid JSON:
+{
+  "relationship_health": "excellent"|"good"|"strained"|"critical",
+  "primary_concern": "<one sentence>",
+  "recommended_action": "<specific action — usually a CEFTS payment with amount and timing>",
+  "estimated_impact": "low"|"medium"|"high"
+}
+
+Rules:
+- Reliability < 50 + worsening = critical
+- Late payments >= 3 in last 6 months = strained at minimum
+- Always recommend a specific CEFTS amount and date if action needed`;
+
+export interface SupplierAnalysisContext {
+  supplier: {
+    name: string;
+    businessType: string;
+    reliabilityScore: number;
+    trend: string;
+    notes: string | null;
+  };
+  obligations: Array<{
+    reference: string;
+    amount: number;
+    dueDate: string;
+    status: string;
+    daysLate: number;
+  }>;
+  totalOutstanding: number;
+  overdueCount: number;
+  latePaymentCount: number;
+}
+
+export function buildSupplierAnalysisUserPrompt(
+  ctx: SupplierAnalysisContext,
+): string {
+  const oblStr = ctx.obligations
+    .slice(0, 6)
+    .map(
+      (o) =>
+        `  • ${o.reference} — LKR ${o.amount.toLocaleString()} | Due: ${o.dueDate} | Status: ${o.status}${o.daysLate > 0 ? ` (${o.daysLate}d late)` : ""}`,
+    )
+    .join("\n") || "  None";
+
+  return `
+SUPPLIER
+  Name:              ${ctx.supplier.name}
+  Business type:     ${ctx.supplier.businessType}
+  Reliability score: ${ctx.supplier.reliabilityScore}/100 (${ctx.supplier.trend})
+  Notes:             ${ctx.supplier.notes ?? "none"}
+
+OUR PAYMENT OBLIGATIONS
+${oblStr}
+
+EXPOSURE SUMMARY
+  Total outstanding: LKR ${ctx.totalOutstanding.toLocaleString()}
+  Overdue count:     ${ctx.overdueCount}
+  Late in 6 months:  ${ctx.latePaymentCount}
+
+Analyze our payment reliability as a payer and return the JSON assessment.
+  `.trim();
+}
+
 // ─── Survival Plan ────────────────────────────────────────────────────────────
 
 export const SURVIVAL_PLAN_SYSTEM = `
