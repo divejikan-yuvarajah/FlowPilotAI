@@ -217,7 +217,11 @@ export function MobileSidebar({
 }) {
   return (
     <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <SheetContent side="left" className="p-0 w-64 border-r border-border-subtle bg-bg-surface">
+      <SheetContent
+        hideClose
+        side="left"
+        className="p-0 w-64 border-r border-border-subtle bg-bg-surface"
+      >
         <SidebarContent onClose={onClose} />
       </SheetContent>
     </Sheet>

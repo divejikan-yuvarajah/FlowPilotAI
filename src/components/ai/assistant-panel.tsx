@@ -229,8 +229,9 @@ export function AssistantPanel() {
   return (
     <Sheet open={isOpen} onOpenChange={setOpen}>
       <SheetContent
+        hideClose
         side="right"
-        className="w-full lg:w-[440px] p-0 flex flex-col bg-bg-surface border-l border-border gap-0 [&>button:first-child]:hidden"
+        className="w-full lg:w-[440px] p-0 flex flex-col bg-bg-surface border-l border-border gap-0"
       >
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <SheetHeader className="px-5 py-4 border-b border-border shrink-0">
