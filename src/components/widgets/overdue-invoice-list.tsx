@@ -73,7 +73,7 @@ function DataRow({ invoice }: { invoice: OverdueInvoice }) {
       {/* Chevron (default) / Recover button (hover) */}
       <div className="shrink-0 w-20 flex justify-end">
         <button
-          onClick={() => router.push(`/recovery?invoiceId=${invoice.id}`)}
+          onClick={() => router.push(`/recovery/${invoice.id}`)}
           className="hidden group-hover:flex items-center gap-1 text-xs font-medium text-signal-danger bg-signal-danger/10 hover:bg-signal-danger/20 px-2.5 py-1 rounded-md transition-colors"
         >
           Recover

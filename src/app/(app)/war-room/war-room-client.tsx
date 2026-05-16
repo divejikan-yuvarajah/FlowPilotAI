@@ -47,7 +47,7 @@ function buildCriticalActions(
       label: `Send Stage 2 to ${worst.clientName}`,
       description: `${worst.invoiceNumber} · ${worst.daysOverdue} days overdue`,
       status: worst.daysOverdue >= 10 ? "danger" : "watch",
-      href: `/recovery?invoiceId=${worst.id}`,
+      href: `/recovery/${worst.id}`,
     });
   }
 
