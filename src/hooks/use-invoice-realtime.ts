@@ -67,3 +67,4 @@ export function InvoiceRealtimeProvider() {
   useInvoiceRealtime();
   return null;
 }
+
