@@ -44,30 +44,31 @@ export function ActivityTicker() {
     : "just now";
 
   return (
-    <div className="h-7 shrink-0 border-b border-border-subtle bg-bg-surface flex items-center gap-6 px-8 overflow-x-auto text-xs text-ink-secondary">
-      {/* Connected status */}
+    <div className="h-7 shrink-0 border-b border-border-subtle bg-bg-surface flex items-center gap-4 px-4 sm:px-8 overflow-hidden text-xs text-ink-secondary">
+      {/* Connected status — always visible */}
       <div className="flex items-center gap-1.5 shrink-0">
         <span className="relative flex h-1.5 w-1.5 shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-signal-healthy opacity-75" />
           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-signal-healthy" />
         </span>
-        <span>Connected to Seylan Bank</span>
+        <span className="hidden sm:inline">Connected to Seylan Bank</span>
+        <span className="sm:hidden">Live</span>
       </div>
 
       {/* Last sync */}
       <div className="flex items-center gap-1.5 shrink-0">
         <RotateCw className="h-3 w-3 text-ink-tertiary" />
-        <span>Last sync: <span className="text-ink-primary font-medium">{syncAge}</span></span>
+        <span>Sync: <span className="text-ink-primary font-medium">{syncAge}</span></span>
       </div>
 
-      {/* Rules monitoring */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      {/* Rules — hidden on mobile */}
+      <div className="hidden sm:flex items-center gap-1.5 shrink-0">
         <Workflow className="h-3 w-3 text-ink-tertiary" />
-        <span>12 rules monitoring</span>
+        <span>12 rules active</span>
       </div>
 
-      {/* AI cache */}
-      <div className="flex items-center gap-1.5 ml-auto shrink-0">
+      {/* AI cache — push to right, hidden on mobile */}
+      <div className="hidden sm:flex items-center gap-1.5 ml-auto shrink-0">
         <Sparkles className="h-3 w-3 text-signal-ai" />
         <span>AI cache active</span>
       </div>

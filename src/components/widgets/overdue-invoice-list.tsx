@@ -41,45 +41,35 @@ function DataRow({ invoice }: { invoice: OverdueInvoice }) {
   const router = useRouter();
 
   return (
-    <div className="group flex items-center gap-3 px-5 py-3 hover:bg-bg-raised transition-colors relative">
-      {/* Client + trust badge */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <SignalBadge variant={getTierVariant(invoice.riskTier)} size="sm">
-          {invoice.riskTier}
-        </SignalBadge>
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-ink-primary truncate">
-            {invoice.clientName}
-          </p>
-          <p className="text-xs text-ink-muted">{invoice.invoiceNumber}</p>
-        </div>
+    <div
+      className="flex items-center gap-2 px-4 py-3 hover:bg-bg-raised transition-colors cursor-pointer"
+      onClick={() => router.push(`/recovery/${invoice.id}`)}
+    >
+      {/* Tier badge */}
+      <SignalBadge variant={getTierVariant(invoice.riskTier)} size="sm" className="shrink-0">
+        {invoice.riskTier}
+      </SignalBadge>
+
+      {/* Client + invoice */}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-ink-primary truncate leading-tight">
+          {invoice.clientName}
+        </p>
+        <p className="text-[11px] text-ink-muted">{invoice.invoiceNumber}</p>
       </div>
 
-      {/* Amount */}
-      <span className="font-mono text-sm text-ink-primary tabular-nums shrink-0">
-        LKR {invoice.amount.toLocaleString()}
+      {/* Amount — abbreviated on small screens */}
+      <span className="font-mono text-xs sm:text-sm text-ink-primary tabular-nums shrink-0">
+        <span className="sm:hidden">LKR {(invoice.amount / 1000).toFixed(0)}k</span>
+        <span className="hidden sm:inline">LKR {invoice.amount.toLocaleString()}</span>
       </span>
 
       {/* Days overdue */}
-      <span
-        className={cn(
-          "text-xs font-semibold tabular-nums shrink-0 min-w-[56px] text-right",
-          getDaysColor(invoice.daysOverdue),
-        )}
-      >
+      <span className={cn("text-xs font-bold tabular-nums shrink-0 min-w-[28px] text-right", getDaysColor(invoice.daysOverdue))}>
         {invoice.daysOverdue}d
       </span>
 
-      {/* Chevron (default) / Recover button (hover) */}
-      <div className="shrink-0 w-20 flex justify-end">
-        <button
-          onClick={() => router.push(`/recovery/${invoice.id}`)}
-          className="hidden group-hover:flex items-center gap-1 text-xs font-medium text-signal-danger bg-signal-danger/10 hover:bg-signal-danger/20 px-2.5 py-1 rounded-md transition-colors"
-        >
-          Recover
-        </button>
-        <ChevronRight className="h-4 w-4 text-ink-muted group-hover:hidden" />
-      </div>
+      <ChevronRight className="h-3.5 w-3.5 text-ink-muted shrink-0" />
     </div>
   );
 }
@@ -104,11 +94,12 @@ export function OverdueInvoiceList({ invoices, className }: OverdueInvoiceListPr
       </div>
 
       {/* Column headers */}
-      <div className="flex items-center gap-3 px-5 py-2 border-b border-border">
-        <span className="text-xs text-ink-muted flex-1">Client</span>
-        <span className="text-xs text-ink-muted">Amount</span>
-        <span className="text-xs text-ink-muted min-w-[56px] text-right">Overdue</span>
-        <span className="w-20" />
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border">
+        <span className="w-6 shrink-0" />
+        <span className="text-[10px] text-ink-muted flex-1 uppercase tracking-wide">Client</span>
+        <span className="text-[10px] text-ink-muted uppercase tracking-wide">Amount</span>
+        <span className="text-[10px] text-ink-muted uppercase tracking-wide min-w-[28px] text-right">Due</span>
+        <span className="w-3.5 shrink-0" />
       </div>
 
       {/* Rows */}

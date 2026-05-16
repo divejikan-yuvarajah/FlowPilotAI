@@ -163,30 +163,29 @@ function BalancePill() {
     >
       {/* Live status dot */}
       <span className="relative flex h-1.5 w-1.5 shrink-0">
-        <span
-          className={cn(
-            "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
-            dotColor,
-          )}
-        />
-        <span
-          className={cn("relative inline-flex rounded-full h-1.5 w-1.5", dotColor)}
-        />
+        <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", dotColor)} />
+        <span className={cn("relative inline-flex rounded-full h-1.5 w-1.5", dotColor)} />
       </span>
 
       <TrendIcon className={cn("h-3.5 w-3.5 shrink-0", trendColor)} />
 
+      {/* On mobile: show abbreviated amount */}
       <AnimatedNumber
         value={displayBalance}
-        format={(v) => `LKR ${v.toLocaleString()}`}
+        format={(v) => {
+          if (typeof window !== "undefined" && window.innerWidth < 640) {
+            return `LKR ${(v / 1000).toFixed(0)}k`;
+          }
+          return `LKR ${v.toLocaleString()}`;
+        }}
         className={cn(
-          "font-mono text-sm tabular-nums",
+          "font-mono text-xs sm:text-sm tabular-nums",
           isStressActive ? "text-signal-danger" : "text-ink-primary",
         )}
       />
 
-      {/* LIVE badge */}
-      <span className="text-[10px] px-1.5 py-0.5 bg-signal-healthy/20 text-signal-healthy rounded-full font-semibold tracking-wider shrink-0">
+      {/* LIVE badge — hidden on small screens */}
+      <span className="hidden sm:inline text-[10px] px-1.5 py-0.5 bg-signal-healthy/20 text-signal-healthy rounded-full font-semibold tracking-wider shrink-0">
         LIVE
       </span>
     </div>
@@ -290,38 +289,38 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
 
   return (
     <>
-      <header className="h-16 shrink-0 sticky top-0 z-30 flex items-center px-4 sm:px-6 gap-3 border-b border-border-subtle bg-bg-base/80 backdrop-blur-md">
+      <header className="h-14 shrink-0 sticky top-0 z-30 flex items-center px-3 sm:px-6 gap-2 sm:gap-3 border-b border-border-subtle bg-bg-base/80 backdrop-blur-md">
         {/* Mobile: hamburger menu */}
         <button
           onClick={onMenuClick}
-          className="md:hidden flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:bg-bg-raised transition-colors"
+          className="md:hidden flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:bg-bg-raised transition-colors shrink-0"
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        {/* Left — page title */}
-        <h1 className="font-display font-semibold text-ink-primary text-base truncate">
+        {/* Left — page title (hidden on very small screens to save space) */}
+        <h1 className="hidden sm:block font-display font-semibold text-ink-primary text-sm truncate shrink-0 max-w-[120px] lg:max-w-none">
           {getPageTitle(pathname)}
         </h1>
 
         {/* Center — command palette trigger */}
-        <div className="flex-1 flex justify-center">
+        <div className="flex-1 min-w-0">
           <button
             onClick={() => commandPaletteEvents.open()}
-            className="flex items-center gap-2 px-3 h-8 w-full max-w-xs rounded-md border border-border bg-bg-subtle text-ink-muted text-sm hover:border-border-strong transition-colors"
+            className="flex items-center gap-2 px-2.5 h-8 w-full rounded-md border border-border bg-bg-subtle text-ink-muted hover:border-border-strong transition-colors"
           >
             <Search className="h-3.5 w-3.5 shrink-0" />
-            <span className="flex-1 text-left text-xs">Search or run a command…</span>
-            <kbd className="hidden sm:inline-flex font-mono text-[10px] opacity-50 bg-bg-muted px-1 py-0.5 rounded">
+            <span className="flex-1 text-left text-[11px] sm:text-xs truncate">Search…</span>
+            <kbd className="hidden md:inline-flex font-mono text-[10px] opacity-50 bg-bg-muted px-1 py-0.5 rounded shrink-0">
               ⌘K
             </kbd>
           </button>
         </div>
 
         {/* Right cluster */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Balance pill */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Balance pill — compact on mobile */}
           <BalancePill />
 
           {/* Notifications */}

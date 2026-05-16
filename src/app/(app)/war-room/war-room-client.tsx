@@ -258,8 +258,8 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
       </div>
 
       {/* ── ROW 2: AI Brief + Critical Actions ─────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 min-h-[280px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+        <div className="lg:col-span-8">
           <AiMorningBrief
             bullets={briefBullets}
             generatedAt={data.cfoBrief?.briefDate ?? new Date().toISOString()}
@@ -267,26 +267,24 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
             onRegenerate={handleRegenerate}
           />
         </div>
-        <div className="lg:col-span-4 min-h-[280px]">
+        <div className="lg:col-span-4">
           <CriticalActionsList actions={criticalActions} />
         </div>
       </div>
 
       {/* ── ROW 3: Chart + Overdue List ─────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 min-h-[320px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+        <div className="lg:col-span-7 h-[280px] sm:h-[320px]">
           <RunwayAreaChart data={data.chartData} dangerThreshold={500_000} />
         </div>
-        <div className="lg:col-span-5 min-h-[320px]">
+        <div className="lg:col-span-5">
           <OverdueInvoiceList invoices={data.overdueInvoices} />
         </div>
       </div>
 
       {/* ── ROW 4: Activity Feed ────────────────────────────────────────── */}
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-12">
-          <ActivityFeed entries={data.alertLog} />
-        </div>
+      <div>
+        <ActivityFeed entries={data.alertLog} />
       </div>
 
       {/* ── Stress-test toggle (bottom) ─────────────────────────────────── */}
