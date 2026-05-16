@@ -46,7 +46,7 @@ export function StatTile({
   return (
     <div
       className={cn(
-        "bg-surface border border-border rounded-lg p-3 sm:p-6 flex flex-col gap-2 sm:gap-3",
+        "bg-surface border border-border rounded-lg p-3 sm:p-5 flex flex-col gap-2 overflow-hidden",
         className,
       )}
     >
@@ -65,7 +65,7 @@ export function StatTile({
         value={value}
         format={format}
         className={cn(
-          "text-2xl sm:text-4xl font-display font-semibold leading-none tabular-nums break-all",
+          "text-xl sm:text-3xl font-display font-semibold leading-tight tabular-nums",
           statusValueClass[status],
         )}
       />

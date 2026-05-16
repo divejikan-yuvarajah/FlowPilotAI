@@ -204,9 +204,9 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
       )}
 
       {/* ── ROW 1: Hero StatTiles ───────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Cash Position */}
-        <div>
+        <div className="overflow-hidden">
           <StatTile
             label="Cash Position"
             value={displayBalance}
@@ -219,7 +219,7 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
         </div>
 
         {/* Runway */}
-        <div>
+        <div className="overflow-hidden">
           <StatTile
             label="Runway"
             value={data.runwayDays}
@@ -232,7 +232,7 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
         </div>
 
         {/* Health Score */}
-        <div>
+        <div className="overflow-hidden">
           <HealthScoreGauge
             score={data.healthScore}
             status={data.healthStatus}
@@ -241,7 +241,7 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
         </div>
 
         {/* Overdue Total */}
-        <div>
+        <div className="overflow-hidden">
           <Link href="/overdue" className="block h-full">
             <StatTile
               label="Overdue Total"
