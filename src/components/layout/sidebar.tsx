@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Activity,
   AlertCircle,
@@ -13,7 +12,6 @@ import {
   FlaskConical,
   Home,
   List,
-  LogOut,
   MessageSquare,
   Receipt,
   Send,
@@ -25,9 +23,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,42 +127,7 @@ function SidebarNavItem({ item }: { item: NavItem }) {
 
 // ─── Main sidebar ──────────────────────────────────────────────────────────
 
-type UserInfo = {
-  name: string;
-  email: string;
-};
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
-
 export function Sidebar() {
-  const router = useRouter();
-  const [user, setUser] = useState<UserInfo>({ name: "User", email: "" });
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        const meta = data.user.user_metadata as Record<string, string> | undefined;
-        setUser({
-          name: meta?.owner_name ?? meta?.full_name ?? data.user.email?.split("@")[0] ?? "User",
-          email: data.user.email ?? "",
-        });
-      }
-    });
-  }, []);
-
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/sign-in");
-  }
 
   return (
     <aside className="w-64 shrink-0 flex flex-col h-screen bg-bg-surface border-r border-border-subtle overflow-y-auto">
@@ -218,31 +179,6 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* ── User card ─────────────────────────────────────────────────── */}
-      <div className="px-3 py-3 border-t border-border-subtle shrink-0">
-        <div className="flex items-center gap-2.5 px-2 py-2 rounded-md">
-          <Avatar className="h-7 w-7 shrink-0">
-            <AvatarFallback className="text-xs bg-pilot-500/20 text-pilot-400">
-              {getInitials(user.name)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-ink-primary truncate leading-tight">
-              {user.name}
-            </p>
-            <p className="text-[11px] text-ink-muted truncate leading-tight">
-              {user.email}
-            </p>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="p-1.5 rounded-md text-ink-muted hover:text-signal-danger hover:bg-signal-danger/10 transition-colors shrink-0"
-            aria-label="Sign out"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
     </aside>
   );
 }

@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ThumbsUp, ThumbsDown, RefreshCw, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import { SignalBadge } from "@/components/ui/signal-badge";
 
 interface AiMorningBriefProps {
   bullets: string[];
@@ -60,7 +59,6 @@ export function AiMorningBrief({
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-signal-ai shrink-0" />
           <span className="font-medium text-sm text-ink-primary">AI Morning Brief</span>
-          <SignalBadge variant="ai" size="sm">{model}</SignalBadge>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-ink-muted">
           <Clock className="h-3 w-3" />

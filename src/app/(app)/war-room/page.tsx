@@ -78,7 +78,7 @@ export default async function WarRoomPage() {
       .limit(7),
     supabase
       .from("cfo_briefs")
-      .select("bullets, brief_date, model_used, health_score, runway_days, burn_rate_daily")
+      .select("bullets, brief_date, created_at, model_used, health_score, runway_days, burn_rate_daily")
       .eq("user_id", user.id)
       .order("brief_date", { ascending: false })
       .limit(1),
@@ -169,13 +169,15 @@ export default async function WarRoomPage() {
   const briefRow = cfoBriefResult.data?.[0] as {
     bullets?: string[];
     brief_date?: string;
+    created_at?: string;
     model_used?: string;
   } | undefined;
 
   const cfoBrief = briefRow
     ? {
         bullets: (briefRow.bullets ?? []) as string[],
-        briefDate: briefRow.brief_date ?? new Date().toISOString(),
+        // Use created_at (timestamptz) for accurate relative time; fall back to brief_date
+        briefDate: briefRow.created_at ?? briefRow.brief_date ?? new Date().toISOString(),
         modelUsed: briefRow.model_used ?? "gpt-4o-mini",
       }
     : null;
