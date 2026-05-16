@@ -19,7 +19,13 @@ export function resetLastSync() {
 
 export function ActivityTicker() {
   const [lastSync, setLastSync] = useState(globalLastSync);
+  const [mounted, setMounted] = useState(false);
   const [, tick] = useState(0);
+
+  useEffect(() => {
+    setMounted(true);
+    setLastSync(Date.now());
+  }, []);
 
   // Subscribe to external sync resets
   useEffect(() => {
@@ -33,7 +39,9 @@ export function ActivityTicker() {
     return () => clearInterval(id);
   }, []);
 
-  const syncAge = formatDistanceToNow(new Date(lastSync), { addSuffix: true });
+  const syncAge = mounted
+    ? formatDistanceToNow(new Date(lastSync), { addSuffix: true })
+    : "just now";
 
   return (
     <div className="h-7 shrink-0 border-b border-border-subtle bg-bg-surface flex items-center gap-6 px-8 overflow-x-auto text-xs text-ink-secondary">
