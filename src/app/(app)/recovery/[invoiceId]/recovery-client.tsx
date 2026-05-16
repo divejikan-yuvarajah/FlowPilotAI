@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { SignalBadge } from "@/components/ui/signal-badge";
+import { useRecoveryStore, type RecoveryLanguage } from "@/store/recovery";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,7 +106,7 @@ function outcomeToVariant(outcome: string): React.ComponentProps<typeof SignalBa
 
 // ─── WhatsApp phone preview ───────────────────────────────────────────────────
 
-function WhatsAppPreview({ message, clientName }: { message: string; clientName: string }) {
+function WhatsAppPreview({ message, clientName, language }: { message: string; clientName: string; language: RecoveryLanguage }) {
   const preview = message.slice(0, 300) + (message.length > 300 ? "…" : "");
   const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -131,7 +132,10 @@ function WhatsAppPreview({ message, clientName }: { message: string; clientName:
           {/* Message area */}
           <div className="p-3 bg-[#0a1929] min-h-[130px] flex items-end">
             <div className="bg-[#005c4b] rounded-lg rounded-tl-none px-3 py-2 max-w-[220px] ml-auto">
-              <p className="text-white text-[10px] leading-relaxed whitespace-pre-wrap break-words">
+              <p
+                className="text-white text-[10px] leading-relaxed whitespace-pre-wrap break-words"
+                style={{ fontFamily: language === "si" ? "'Noto Sans Sinhala', sans-serif" : language === "ta" ? "'Noto Sans Tamil', sans-serif" : undefined }}
+              >
                 {preview || "Generating message…"}
               </p>
               <p className="text-white/40 text-[8px] text-right mt-1">{time} ✓✓</p>
@@ -255,6 +259,18 @@ const CHANNEL_CONFIG = [
   { key: "sms"      as Channel, label: "SMS"      },
 ];
 
+const LANGUAGE_CONFIG: { key: RecoveryLanguage; label: string; native: string; flag: string }[] = [
+  { key: "en", label: "English",  native: "English",  flag: "🇬🇧" },
+  { key: "si", label: "Sinhala",  native: "සිංහල",    flag: "🇱🇰" },
+  { key: "ta", label: "Tamil",    native: "தமிழ்",    flag: "🇱🇰" },
+];
+
+function getTextareaFont(language: RecoveryLanguage): string {
+  if (language === "si") return "'Noto Sans Sinhala', system-ui, sans-serif";
+  if (language === "ta") return "'Noto Sans Tamil', system-ui, sans-serif";
+  return "var(--font-sans), system-ui, sans-serif";
+}
+
 export function RecoveryClient({
   invoice,
   history,
@@ -262,9 +278,12 @@ export function RecoveryClient({
   invoice: InvoiceDetail;
   history: RecoveryEntry[];
 }) {
+  const { preferredLanguage, setPreferredLanguage } = useRecoveryStore();
+
   const [stage, setStage] = useState<Stage>(
     invoice.escalationStage === "3" ? 3 : invoice.escalationStage === "2" ? 2 : 1,
   );
+  const [language, setLanguage] = useState<RecoveryLanguage>(preferredLanguage);
   const [channel, setChannel] = useState<Channel>("whatsapp");
   const [message, setMessage] = useState(invoice.lastRecoveryMessage ?? "");
   const [isGenerating, setIsGenerating] = useState(!invoice.lastRecoveryMessage);
@@ -296,7 +315,7 @@ export function RecoveryClient({
   }
 
   const generateMessage = useCallback(
-    async (forStage: Stage) => {
+    async (forStage: Stage, forLanguage: RecoveryLanguage = language) => {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -311,7 +330,7 @@ export function RecoveryClient({
           body: JSON.stringify({
             invoiceId: invoice.id,
             stage: stageToApiStage(forStage),
-            language: "en",
+            language: forLanguage,
           }),
           signal: controller.signal,
         });
@@ -341,22 +360,28 @@ export function RecoveryClient({
   // Generate on mount if no cached message
   useEffect(() => {
     if (!invoice.lastRecoveryMessage) {
-      generateMessage(stage);
+      generateMessage(stage, language);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function handleLanguageChange(lang: RecoveryLanguage) {
+    setLanguage(lang);
+    setPreferredLanguage(lang); // persist to Zustand store
+    generateMessage(stage, lang);
+  }
+
   function handleStageChange(s: Stage) {
     setStage(s);
     setToneValue((s - 1) * 50);
-    generateMessage(s);
+    generateMessage(s, language);
   }
 
   function handleSliderRelease() {
     const newStage = sliderToStage(toneValue);
     if (newStage !== stage) {
       setStage(newStage);
-      generateMessage(newStage);
+      generateMessage(newStage, language);
     }
   }
 
@@ -388,6 +413,30 @@ export function RecoveryClient({
       {/* ── LEFT: Message composer ───────────────────────────────────────── */}
       <div className="col-span-7 space-y-4">
         <div className="bg-surface border border-border rounded-lg overflow-hidden">
+          {/* Language selector */}
+          <div className="px-4 pt-4 pb-3 border-b border-border space-y-2">
+            <div className="flex gap-2">
+              {LANGUAGE_CONFIG.map(({ key, native, flag }) => (
+                <button
+                  key={key}
+                  onClick={() => handleLanguageChange(key)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md border text-sm font-medium transition-colors",
+                    language === key
+                      ? "bg-pilot-500/20 border-pilot-500 text-pilot-400"
+                      : "bg-bg-subtle border-border text-ink-secondary hover:bg-bg-raised hover:text-ink-primary",
+                  )}
+                >
+                  <span>{flag}</span>
+                  <span>{native}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-ink-muted">
+              AI will draft in the selected language. Numbers and technical terms remain in English.
+            </p>
+          </div>
+
           {/* Tone tabs */}
           <div className="flex border-b border-border">
             {STAGE_CONFIG.map(({ stage: s, label, Icon, color, underline }) => (
@@ -447,6 +496,7 @@ export function RecoveryClient({
                         "focus:outline-none focus:ring-1 focus:ring-signal-ai/50 resize-none",
                         "leading-relaxed",
                       )}
+                      style={{ fontFamily: getTextareaFont(language) }}
                       placeholder="AI-drafted message will appear here…"
                     />
                     {/* Typing cursor */}
@@ -509,7 +559,7 @@ export function RecoveryClient({
           {/* Preview */}
           {channel === "whatsapp" && !isGenerating && (
             <div className="border-t border-border bg-bg-subtle py-4">
-              <WhatsAppPreview message={message} clientName={invoice.client.name} />
+              <WhatsAppPreview message={message} clientName={invoice.client.name} language={language} />
             </div>
           )}
 
@@ -556,7 +606,7 @@ export function RecoveryClient({
             </motion.div>
 
             <button
-              onClick={() => generateMessage(stage)}
+              onClick={() => generateMessage(stage, language)}
               disabled={isGenerating}
               className="flex items-center gap-1.5 text-xs text-ink-secondary hover:text-ink-primary px-3 py-2 rounded-md border border-border hover:bg-bg-raised transition-colors disabled:opacity-40"
             >

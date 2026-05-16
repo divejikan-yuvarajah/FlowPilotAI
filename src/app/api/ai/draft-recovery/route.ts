@@ -3,7 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { callOpenRouter } from "@/lib/ai/openrouter";
 import {
-  RECOVERY_SYSTEM,
+  buildRecoverySystemPrompt,
   buildRecoveryUserPrompt,
   type RecoveryContext,
   type RecoveryLanguage,
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     const result = await callOpenRouter({
       model: "gpt-4o-mini",
-      systemPrompt: RECOVERY_SYSTEM,
+      systemPrompt: buildRecoverySystemPrompt(language as RecoveryLanguage),
       userPrompt: buildRecoveryUserPrompt(ctx),
       cacheKey,
       userId: user.id,

@@ -34,6 +34,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      {/* Noto Sans for Sinhala + Tamil glyph support in recovery messages */}
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body
         className={`${inter.variable} ${geistSans.variable} ${jetbrainsMono.variable} antialiased`}
       >

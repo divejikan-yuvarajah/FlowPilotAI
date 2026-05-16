@@ -119,10 +119,42 @@ and a call-to-action. Never threaten legal action at stage 1 or 2.
 
 export type RecoveryLanguage = "en" | "si" | "ta";
 
+/**
+ * Builds the system prompt with language-specific instructions injected at
+ * runtime. Used by the draft-recovery API route.
+ *
+ * DEMO MOMENT: After generating the English message, the presenter clicks
+ * 'සිංහල'. The textarea regenerates with the same content in Sinhala —
+ * same tone, localized. This single click demonstrates deep local-market
+ * product thinking and is the "wow" moment for the language feature.
+ */
+export function buildRecoverySystemPrompt(language: RecoveryLanguage): string {
+  if (language === "en") return RECOVERY_SYSTEM;
+
+  const langName = language === "si" ? "Sinhala" : "Tamil";
+  const register =
+    language === "si"
+      ? "For Sinhala, use the respectful 'oba' (ඔබ) register, NOT 'thama' (තමා). Write naturally as a business owner would; never translate word-for-word."
+      : "Use respectful formal Tamil business register (நீங்கள் form). Write naturally as a Sri Lankan business owner would; never translate word-for-word.";
+
+  return (
+    RECOVERY_SYSTEM +
+    `
+
+IMPORTANT: Draft the entire message in ${langName}.
+Keep ONLY these in English exactly as-is (do not translate):
+  - Currency amounts (e.g. LKR 185,000)
+  - JustPay and the payment link URL
+  - Invoice numbers (e.g. INV-2047)
+  - Business names and personal names
+${register}`
+  );
+}
+
 const LANGUAGE_INSTRUCTION: Record<RecoveryLanguage, string> = {
   en: "",
-  si: "Draft the message in Sinhala. Keep technical terms (LKR, JustPay, invoice number, owner name, business name) in English. Use a natural business tone appropriate for a Sri Lankan SME.",
-  ta: "Draft the message in Tamil. Keep technical terms (LKR, JustPay, invoice number, owner name, business name) in English. Use a natural business tone appropriate for a Sri Lankan SME.",
+  si: "Language: Sinhala. Draft in Sinhala using 'oba' register. Keep LKR, JustPay, invoice number, names in English.",
+  ta: "Language: Tamil. Draft in Tamil using formal நீங்கள் register. Keep LKR, JustPay, invoice number, names in English.",
 };
 
 export interface RecoveryContext {
@@ -149,7 +181,8 @@ export function buildRecoveryUserPrompt(ctx: RecoveryContext): string {
     : "Ask them to make payment via CEFTS or bank transfer.";
 
   return `
-${langInstruction ? langInstruction + "\n\n" : ""}Stage ${stage} recovery message.
+${langInstruction ? langInstruction + "\n\n" : ""}Language: ${language === "si" ? "Sinhala" : language === "ta" ? "Tamil" : "English"}
+Stage ${stage} recovery message.
 
 Invoice:    ${invoice.invoiceNumber}
 Amount:     LKR ${invoice.amount.toLocaleString()}
