@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { seylan } from "@/lib/seylan/client";
 import { calculateRunway } from "@/lib/engines/runway-model";
@@ -50,6 +51,50 @@ function buildChartData(
 
 // ─── Page ─────────────────────────────────────────────────────────────────
 
+// Cache non-balance data for 60 seconds to avoid redundant DB round-trips
+const getCachedWarRoomData = unstable_cache(
+  async (userId: string) => {
+    const supabase = createClient();
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
+    const [invoicesResult, cfoBriefResult, alertLogResult, transactionsResult, clientsResult] =
+      await Promise.all([
+        supabase
+          .from("invoices")
+          .select("id, invoice_number, amount, due_date, risk_score, clients(name, trust_score, risk_tier)")
+          .eq("status", "overdue")
+          .order("risk_score", { ascending: false, nullsFirst: false })
+          .order("due_date", { ascending: true })
+          .limit(7),
+        supabase
+          .from("cfo_briefs")
+          .select("bullets, brief_date, created_at, model_used, health_score, runway_days, burn_rate_daily")
+          .eq("user_id", userId)
+          .order("brief_date", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("alert_log")
+          .select("id, rule_name, triggered_at, outcome, action_taken, channel, metadata")
+          .order("triggered_at", { ascending: false })
+          .limit(5),
+        supabase
+          .from("transactions")
+          .select("id, posted_at, type, amount, counterparty_name, category")
+          .eq("user_id", userId)
+          .gte("posted_at", thirtyDaysAgo)
+          .order("posted_at", { ascending: false })
+          .limit(100),
+        supabase
+          .from("clients")
+          .select("id, name, trust_score, trust_trend, risk_tier")
+          .eq("user_id", userId),
+      ]);
+    return { invoicesResult, cfoBriefResult, alertLogResult, transactionsResult, clientsResult };
+  },
+  ["war-room-data"],
+  { revalidate: 60 },
+);
+
 export default async function WarRoomPage() {
   const supabase = createClient();
 
@@ -57,47 +102,13 @@ export default async function WarRoomPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 
-  // ── Fetch all data in parallel ───────────────────────────────────────────
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
-
+  // ── Fetch live balance + cached DB data in parallel ──────────────────────
   const [
     balanceResult,
-    invoicesResult,
-    cfoBriefResult,
-    alertLogResult,
-    transactionsResult,
-    clientsResult,
+    { invoicesResult, cfoBriefResult, alertLogResult, transactionsResult, clientsResult },
   ] = await Promise.all([
     seylan.getBalance(),
-    supabase
-      .from("invoices")
-      .select("id, invoice_number, amount, due_date, risk_score, clients(name, trust_score, risk_tier)")
-      .eq("status", "overdue")
-      .order("risk_score", { ascending: false, nullsFirst: false })
-      .order("due_date", { ascending: true })
-      .limit(7),
-    supabase
-      .from("cfo_briefs")
-      .select("bullets, brief_date, created_at, model_used, health_score, runway_days, burn_rate_daily")
-      .eq("user_id", user.id)
-      .order("brief_date", { ascending: false })
-      .limit(1),
-    supabase
-      .from("alert_log")
-      .select("id, rule_name, outcome, triggered_at, metadata, invoice_id")
-      .eq("user_id", user.id)
-      .order("triggered_at", { ascending: false })
-      .limit(10),
-    supabase
-      .from("transactions")
-      .select("type, amount, posted_at, category, counterparty_name")
-      .eq("user_id", user.id)
-      .gte("posted_at", thirtyDaysAgo)
-      .order("posted_at", { ascending: false }),
-    supabase
-      .from("clients")
-      .select("trust_score, trust_trend")
-      .eq("user_id", user.id),
+    getCachedWarRoomData(user.id),
   ]);
 
   // ── Runway engine ────────────────────────────────────────────────────────
@@ -166,12 +177,12 @@ export default async function WarRoomPage() {
   const overdueTotal = overdueInvoices.reduce((s, i) => s + i.amount, 0);
 
   // ── CFO brief ────────────────────────────────────────────────────────────
-  const briefRow = cfoBriefResult.data?.[0] as {
+  const briefRow = cfoBriefResult.data as {
     bullets?: string[];
     brief_date?: string;
     created_at?: string;
     model_used?: string;
-  } | undefined;
+  } | null | undefined;
 
   const cfoBrief = briefRow
     ? {
