@@ -47,89 +47,55 @@ export function HealthScoreGauge({
   return (
     <div
       className={cn(
-        "bg-surface border border-border rounded-lg p-6 flex flex-col gap-3",
+        "bg-surface border border-border rounded-lg p-3 sm:p-5 flex flex-col gap-2 overflow-hidden",
         className,
       )}
     >
       {/* Label */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs uppercase tracking-wider text-ink-tertiary font-medium">
-          Health Score
-        </span>
-      </div>
+      <span className="text-xs uppercase tracking-wider text-ink-tertiary font-medium">
+        Health Score
+      </span>
 
-      {/* Gauge */}
-      <div className="flex items-center gap-4">
-        <div className="relative shrink-0">
-          <svg width="120" height="110" viewBox="0 0 120 124" fill="none">
-            {/* Track */}
-            <circle
-              r={R}
-              cx={CX}
-              cy={CY}
-              stroke="hsl(217 33% 17%)"
-              strokeWidth={9}
-              strokeLinecap="round"
+      {/* Gauge — SVG scales with container via viewBox */}
+      <div className="flex items-center gap-2">
+        <div className="relative shrink-0 w-[72px] sm:w-[90px]">
+          <svg
+            viewBox="0 0 120 124"
+            fill="none"
+            className="w-full h-auto"
+          >
+            <circle r={R} cx={CX} cy={CY} stroke="hsl(217 33% 17%)"
+              strokeWidth={9} strokeLinecap="round"
               strokeDasharray={`${ARC} ${GAP}`}
-              transform={`rotate(135, ${CX}, ${CY})`}
-              fill="none"
-            />
-            {/* Progress */}
-            <motion.circle
-              r={R}
-              cx={CX}
-              cy={CY}
-              stroke={color}
-              strokeWidth={9}
-              strokeLinecap="round"
+              transform={`rotate(135, ${CX}, ${CY})`} fill="none" />
+            <motion.circle r={R} cx={CX} cy={CY} stroke={color}
+              strokeWidth={9} strokeLinecap="round"
               strokeDasharray={`${ARC} ${GAP}`}
-              transform={`rotate(135, ${CX}, ${CY})`}
-              fill="none"
+              transform={`rotate(135, ${CX}, ${CY})`} fill="none"
               initial={{ strokeDashoffset: ARC }}
               animate={{ strokeDashoffset: dashOffset }}
-              transition={{ duration: 1.4, ease: "easeOut", delay: 0.2 }}
-            />
-            {/* Score text */}
-            <text
-              x={CX}
-              y={CY + 2}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="currentColor"
-              fontSize="22"
-              fontWeight="700"
+              transition={{ duration: 1.4, ease: "easeOut", delay: 0.2 }} />
+            <text x={CX} y={CY + 2} textAnchor="middle" dominantBaseline="middle"
+              fill="currentColor" fontSize="22" fontWeight="700"
               fontFamily="var(--font-display, sans-serif)"
-              className="fill-ink-primary"
-            >
+              className="fill-ink-primary">
               {Math.round(clampedScore)}
             </text>
-            {/* Grade */}
-            <text
-              x={CX}
-              y={CY + 22}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill={color}
-              fontSize="12"
-              fontWeight="600"
-            >
+            <text x={CX} y={CY + 22} textAnchor="middle" dominantBaseline="middle"
+              fill={color} fontSize="12" fontWeight="600">
               {grade}
             </text>
           </svg>
         </div>
 
         {/* Right info */}
-        <div className="space-y-1.5 min-w-0">
-          <p className="text-2xl font-display font-semibold leading-none tabular-nums" style={{ color }}>
+        <div className="space-y-0.5 min-w-0">
+          <p className="text-lg sm:text-2xl font-display font-semibold leading-none tabular-nums" style={{ color }}>
             {Math.round(clampedScore)}
-            <span className="text-sm text-ink-muted font-normal ml-1">/100</span>
+            <span className="text-xs text-ink-muted font-normal ml-0.5">/100</span>
           </p>
-          <p className="text-xs font-medium" style={{ color }}>
-            {STATUS_LABEL[status]}
-          </p>
-          <p className="text-xs text-ink-muted">
-            Grade {grade} — updated today
-          </p>
+          <p className="text-xs font-medium" style={{ color }}>{STATUS_LABEL[status]}</p>
+          <p className="text-[10px] text-ink-muted">Grade {grade}</p>
         </div>
       </div>
     </div>
