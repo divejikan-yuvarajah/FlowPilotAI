@@ -23,8 +23,24 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FlowPilot AI",
-  description: "AI-powered financial operations for Sri Lankan businesses",
+  title: "FlowPilot AI · Financial OS for Sri Lankan SMEs",
+  description:
+    "Predict cash crises 22 days early. Recover payments automatically. Built on Seylan Bank APIs.",
+  openGraph: {
+    title: "FlowPilot AI",
+    description:
+      "Predict cash crises 22 days early. Recover payments automatically. Built on Seylan Bank APIs.",
+    url: "https://flowpilot.ai",
+    siteName: "FlowPilot AI",
+    images: [{ url: "/og", width: 1200, height: 630, alt: "FlowPilot AI" }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FlowPilot AI · Financial OS for Sri Lankan SMEs",
+    description: "Predict cash crises 22 days early. Built on Seylan Bank APIs.",
+    images: ["/og"],
+  },
 };
 
 export default function RootLayout({

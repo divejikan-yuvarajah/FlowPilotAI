@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
+  Menu,
   Moon,
   Search,
   Settings,
@@ -254,7 +255,7 @@ function BalancePill() {
 
 // ─── TopNav ────────────────────────────────────────────────────────────────
 
-export function TopNav() {
+export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const [hasNotifications] = useState(true); // static for MVP
@@ -289,7 +290,16 @@ export function TopNav() {
 
   return (
     <>
-      <header className="h-16 shrink-0 sticky top-0 z-30 flex items-center px-6 gap-4 border-b border-border-subtle bg-bg-base/80 backdrop-blur-md">
+      <header className="h-16 shrink-0 sticky top-0 z-30 flex items-center px-4 sm:px-6 gap-3 border-b border-border-subtle bg-bg-base/80 backdrop-blur-md">
+        {/* Mobile: hamburger menu */}
+        <button
+          onClick={onMenuClick}
+          className="md:hidden flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:bg-bg-raised transition-colors"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
         {/* Left — page title */}
         <h1 className="font-display font-semibold text-ink-primary text-base truncate">
           {getPageTitle(pathname)}

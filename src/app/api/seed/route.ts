@@ -471,36 +471,70 @@ Burn: LKR ${BURN_DAILY.toLocaleString()}/day. Reply ONLY with a JSON array like 
 
   type CacheJob = { cacheKey: string; model: string; promptPreview: string; prompt: string; maxTokens: number };
 
-  const cacheJobs: CacheJob[] = overdueInvoices.flatMap((inv) => [
+  const cacheJobs: CacheJob[] = [
+    // ── 3 invoices × risk + 3 recovery stages (EN) + INV-2047 stage 2 in Sinhala ──
+    ...overdueInvoices.flatMap((inv) => [
+      {
+        cacheKey: `analyze-risk:${inv.number}`,
+        model: "gpt-4o-mini",
+        promptPreview: `Risk analysis ${inv.number} — ${inv.client}`,
+        prompt: `Risk analysis: ${inv.number} | ${inv.client} | LKR ${inv.amount.toLocaleString()} | ${inv.overdue}d overdue | Trust: ${inv.trust}. 2 sentences + recommended action.`,
+        maxTokens: 150,
+      },
+      {
+        cacheKey: `draft-recovery:${inv.number}:stage:1`,
+        model: "gpt-4o-mini",
+        promptPreview: `Recovery stage 1 ${inv.number}`,
+        prompt: `Polite WhatsApp reminder (3 sentences) for ${inv.number}, ${inv.client}, LKR ${inv.amount.toLocaleString()}, ${inv.overdue} days overdue. Mention JustPay link available.`,
+        maxTokens: 150,
+      },
+      {
+        cacheKey: `draft-recovery:${inv.number}:stage:2`,
+        model: "gpt-4o-mini",
+        promptPreview: `Recovery stage 2 ${inv.number}`,
+        prompt: `Firm escalation message (3 sentences) for ${inv.number}, ${inv.client}, LKR ${inv.amount.toLocaleString()}, ${inv.overdue} days overdue. Reference credit facility impact.`,
+        maxTokens: 150,
+      },
+      {
+        cacheKey: `draft-recovery:${inv.number}:stage:3`,
+        model: "gpt-4o-mini",
+        promptPreview: `Recovery stage 3 (final notice) ${inv.number}`,
+        prompt: `Formal final notice (3 sentences) for ${inv.number}, ${inv.client}, LKR ${inv.amount.toLocaleString()}, ${inv.overdue} days overdue. State credit suspension in 48h if unpaid.`,
+        maxTokens: 150,
+      },
+    ]),
+    // ── INV-2047 Stage 2 in Sinhala — the key demo moment ────────────────────
     {
-      cacheKey: `analyze-risk:${inv.number}`,
+      cacheKey: `draft-recovery:INV-2047:stage:2:si`,
       model: "gpt-4o-mini",
-      promptPreview: `Risk analysis ${inv.number} — ${inv.client}`,
-      prompt: `Risk analysis: ${inv.number} | ${inv.client} | LKR ${inv.amount.toLocaleString()} | ${inv.overdue}d overdue | Trust: ${inv.trust}. 2 sentences + recommended action.`,
-      maxTokens: 150,
+      promptPreview: "Recovery stage 2 INV-2047 Sinhala",
+      prompt: `ශ්‍රී ලංකාවේ SME ව්‍යාපාරික WhatsApp දැනුම්දීමක් (3 වාක්‍ය). INV-2047, Nexus Traders, LKR 185,000, 11 දින ප්‍රමාද. ණය ප්‍රතිලාභ කෙරෙහි බලපෑ හැකි බව සඳහන් කරන්න. ද්විතීය අදියර ශෛලිය — ශ්‍රී ලාංකික ව්‍යාපාරික සිංහල (ඔබ ලෙස).`,
+      maxTokens: 200,
+    },
+    // ── Supplier analysis for each supplier ───────────────────────────────────
+    {
+      cacheKey: `supplier-analysis:lanka-logistics`,
+      model: "gpt-4o-mini",
+      promptPreview: "Supplier analysis Lanka Logistics",
+      prompt: `Supplier relationship analyst. Lanka Logistics: score 64/100, worsening trend. 4 late payments (3-5 days each). Latest obligation OBL-0098 LKR 72,400 now overdue 5 days. Return JSON: {relationship_health:"strained",primary_concern:"...",recommended_action:"...",estimated_impact:"high"}`,
+      maxTokens: 200,
     },
     {
-      cacheKey: `draft-recovery:${inv.number}:stage:1`,
+      cacheKey: `supplier-analysis:ceylon-inventory`,
       model: "gpt-4o-mini",
-      promptPreview: `Recovery stage 1 ${inv.number}`,
-      prompt: `Polite WhatsApp reminder (3 sentences) for ${inv.number}, ${inv.client}, LKR ${inv.amount.toLocaleString()}, ${inv.overdue} days overdue. Mention JustPay link available.`,
-      maxTokens: 150,
+      promptPreview: "Supplier analysis Ceylon Inventory Co",
+      prompt: `Supplier relationship analyst. Ceylon Inventory Co: score 82/100, stable. Good payment history, 30-day terms. LKR 239,300 outstanding (2 pending). Return JSON: {relationship_health:"good",primary_concern:"...",recommended_action:"...",estimated_impact:"low"}`,
+      maxTokens: 200,
     },
+    // ── Survival plan (baseline — no stress) ─────────────────────────────────
     {
-      cacheKey: `draft-recovery:${inv.number}:stage:2`,
+      cacheKey: `survival-plan:baseline`,
       model: "gpt-4o-mini",
-      promptPreview: `Recovery stage 2 ${inv.number}`,
-      prompt: `Firm escalation message (3 sentences) for ${inv.number}, ${inv.client}, LKR ${inv.amount.toLocaleString()}, ${inv.overdue} days overdue. Reference credit facility impact.`,
-      maxTokens: 150,
+      promptPreview: "Survival plan baseline",
+      prompt: `Crisis CFO. Sri Lankan SME. Balance LKR 1.2M, runway 14 days, burn LKR 18,500/day. Overdue: Nexus Traders LKR 327k, Summit Retail LKR 215k. No additional stress. Produce 5-action survival plan JSON with severity, runwayWithShock, actions array.`,
+      maxTokens: 350,
     },
-    {
-      cacheKey: `draft-recovery:${inv.number}:stage:3`,
-      model: "gpt-4o-mini",
-      promptPreview: `Recovery stage 3 (final notice) ${inv.number}`,
-      prompt: `Formal final notice (3 sentences) for ${inv.number}, ${inv.client}, LKR ${inv.amount.toLocaleString()}, ${inv.overdue} days overdue. State credit suspension in 48h if unpaid.`,
-      maxTokens: 150,
-    },
-  ]);
+  ];
 
   // Run all calls in parallel, capturing responses
   const warmingResults = await Promise.all(

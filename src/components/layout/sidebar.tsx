@@ -21,8 +21,10 @@ import {
   TrendingUp,
   Workflow,
   Zap,
+  X,
   type LucideIcon,
 } from "lucide-react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 import { cn } from "@/lib/utils";
 import {
@@ -129,20 +131,26 @@ function SidebarNavItem({ item }: { item: NavItem }) {
   );
 }
 
-// ─── Main sidebar ──────────────────────────────────────────────────────────
+// ─── Sidebar inner content ─────────────────────────────────────────────────
 
-export function Sidebar() {
-
+function SidebarContent({ onClose }: { onClose?: () => void }) {
   return (
-    <aside className="w-64 shrink-0 flex flex-col h-screen bg-bg-surface border-r border-border-subtle overflow-y-auto">
+    <div className="flex flex-col h-full bg-bg-surface overflow-y-auto">
       {/* ── Logo ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-4 h-16 shrink-0 border-b border-border-subtle">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-pilot-500">
-          <Zap className="h-3.5 w-3.5 text-white" />
+      <div className="flex items-center justify-between px-4 h-16 shrink-0 border-b border-border-subtle">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-pilot-500">
+            <Zap className="h-3.5 w-3.5 text-white" />
+          </div>
+          <span className="font-display text-base font-semibold text-ink-primary tracking-tight">
+            FlowPilot AI
+          </span>
         </div>
-        <span className="font-display text-base font-semibold text-ink-primary tracking-tight">
-          FlowPilot AI
-        </span>
+        {onClose && (
+          <button onClick={onClose} className="p-1 rounded-md text-ink-muted hover:bg-bg-raised transition-colors md:hidden">
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* ── Workspace switcher ─────────────────────────────────────────── */}
@@ -176,13 +184,42 @@ export function Sidebar() {
             </p>
             <div className="space-y-0.5">
               {section.items.map((item) => (
-                <SidebarNavItem key={item.href} item={item} />
+                <div key={item.href} onClick={onClose}>
+                  <SidebarNavItem item={item} />
+                </div>
               ))}
             </div>
           </div>
         ))}
       </nav>
+    </div>
+  );
+}
 
+// ─── Main sidebar ──────────────────────────────────────────────────────────
+
+export function Sidebar({ onMobileClose }: { onMobileClose?: () => void }) {
+  return (
+    <aside className="hidden md:flex w-64 shrink-0 flex-col h-screen border-r border-border-subtle overflow-y-auto">
+      <SidebarContent />
     </aside>
+  );
+}
+
+// ─── Mobile sidebar (Sheet) ────────────────────────────────────────────────
+
+export function MobileSidebar({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <SheetContent side="left" className="p-0 w-64 border-r border-border-subtle bg-bg-surface">
+        <SidebarContent onClose={onClose} />
+      </SheetContent>
+    </Sheet>
   );
 }

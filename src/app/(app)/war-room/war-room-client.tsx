@@ -192,9 +192,9 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
       )}
 
       {/* ── ROW 1: Hero StatTiles ───────────────────────────────────────── */}
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Cash Position */}
-        <div className="col-span-3">
+        <div>
           <StatTile
             label="Cash Position"
             value={displayBalance}
@@ -207,7 +207,7 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
         </div>
 
         {/* Runway */}
-        <div className="col-span-3">
+        <div>
           <StatTile
             label="Runway"
             value={data.runwayDays}
@@ -220,7 +220,7 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
         </div>
 
         {/* Health Score */}
-        <div className="col-span-3">
+        <div>
           <HealthScoreGauge
             score={data.healthScore}
             status={data.healthStatus}
@@ -229,7 +229,7 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
         </div>
 
         {/* Overdue Total */}
-        <div className="col-span-3">
+        <div>
           <Link href="/overdue" className="block h-full">
             <StatTile
               label="Overdue Total"
@@ -246,8 +246,8 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
       </div>
 
       {/* ── ROW 2: AI Brief + Critical Actions ─────────────────────────── */}
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-8 min-h-[280px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8 min-h-[280px]">
           <AiMorningBrief
             bullets={briefBullets}
             generatedAt={data.cfoBrief?.briefDate ?? new Date().toISOString()}
@@ -255,17 +255,17 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
             onRegenerate={handleRegenerate}
           />
         </div>
-        <div className="col-span-4 min-h-[280px]">
+        <div className="lg:col-span-4 min-h-[280px]">
           <CriticalActionsList actions={criticalActions} />
         </div>
       </div>
 
       {/* ── ROW 3: Chart + Overdue List ─────────────────────────────────── */}
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-7 min-h-[320px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-7 min-h-[320px]">
           <RunwayAreaChart data={data.chartData} dangerThreshold={500_000} />
         </div>
-        <div className="col-span-5 min-h-[320px]">
+        <div className="lg:col-span-5 min-h-[320px]">
           <OverdueInvoiceList invoices={data.overdueInvoices} />
         </div>
       </div>
