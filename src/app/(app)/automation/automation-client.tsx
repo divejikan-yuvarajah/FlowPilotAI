@@ -142,9 +142,12 @@ function RuleCard({ rule }: { rule: AutomationRule }) {
       )}
     >
       {/* Main row */}
-      <button
-        className="w-full px-4 py-4 text-left hover:bg-bg-muted/20 transition-colors"
+      <div
+        role="button"
+        tabIndex={0}
+        className="w-full px-4 py-4 text-left hover:bg-bg-muted/20 transition-colors cursor-pointer"
         onClick={() => setExpanded(!expanded)}
+        onKeyDown={(e) => e.key === "Enter" && setExpanded(!expanded)}
       >
         <div className="flex items-start gap-3">
           {/* Priority badge */}
@@ -220,7 +223,7 @@ function RuleCard({ rule }: { rule: AutomationRule }) {
             )}
           </div>
         </div>
-      </button>
+      </div>
 
       {/* Expanded detail */}
       {expanded && (
