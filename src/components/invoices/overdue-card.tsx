@@ -17,6 +17,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { SignalBadge } from "@/components/ui/signal-badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AIReasoningTooltip } from "@/components/ui/ai-reasoning-tooltip";
+import { Info } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -312,9 +314,17 @@ export function OverdueCard({ invoice, isSelected, onSelect }: OverdueCardProps)
           <span className="text-[10px] text-ink-muted">grade</span>
         </div>
 
-        {/* Col 9: Default probability gauge */}
-        <div className="col-span-1 flex justify-center">
+        {/* Col 9: Default probability gauge + AI tooltip */}
+        <div className="col-span-1 flex justify-center items-center gap-1">
           <DefaultProbGauge riskScore={invoice.riskScore} />
+          {invoice.aiRiskReasoning && (
+            <AIReasoningTooltip
+              model="gpt-4o-mini"
+              reasoning={invoice.aiRiskReasoning}
+            >
+              <Info className="h-3 w-3 text-ink-tertiary hover:text-signal-ai cursor-help" />
+            </AIReasoningTooltip>
+          )}
         </div>
 
         {/* Col 10-12: Actions */}

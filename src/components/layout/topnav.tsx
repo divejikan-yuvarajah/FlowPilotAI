@@ -13,6 +13,7 @@ import {
   User,
   LogOut,
 } from "lucide-react";
+// Dialog/Header imports no longer needed here (command palette moved to shell)
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
@@ -20,12 +21,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useStressTestStore } from "@/store/stress-test";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { commandPaletteEvents } from "@/components/shell/command-palette";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -253,43 +249,14 @@ function BalancePill() {
   );
 }
 
-// ─── Command palette ───────────────────────────────────────────────────────
-
-function CommandPalette({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[540px]">
-        <DialogHeader>
-          <DialogTitle className="sr-only">Command palette</DialogTitle>
-        </DialogHeader>
-        <div className="flex items-center gap-2 border-b border-border pb-3 mb-3">
-          <Search className="h-4 w-4 text-ink-muted shrink-0" />
-          <input
-            autoFocus
-            placeholder="Search or run a command…"
-            className="flex-1 bg-transparent text-sm text-ink-primary placeholder:text-ink-muted outline-none"
-          />
-        </div>
-        <p className="text-sm text-ink-muted text-center py-6">
-          Command palette coming soon.
-        </p>
-      </DialogContent>
-    </Dialog>
-  );
-}
+// CommandPalette is now in src/components/shell/command-palette.tsx
+// — opened via commandPaletteEvents.open() from the search button
 
 // ─── TopNav ────────────────────────────────────────────────────────────────
 
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const [cmdOpen, setCmdOpen] = useState(false);
   const [hasNotifications] = useState(true); // static for MVP
   const [userName, setUserName] = useState("User");
 
@@ -308,17 +275,7 @@ export function TopNav() {
     });
   }, []);
 
-  // ⌘K / Ctrl+K shortcut
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setCmdOpen((v) => !v);
-      }
-    }
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, []);
+  // ⌘K is now handled inside CommandPalette component
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -341,7 +298,7 @@ export function TopNav() {
         {/* Center — command palette trigger */}
         <div className="flex-1 flex justify-center">
           <button
-            onClick={() => setCmdOpen(true)}
+            onClick={() => commandPaletteEvents.open()}
             className="flex items-center gap-2 px-3 h-8 w-full max-w-xs rounded-md border border-border bg-bg-subtle text-ink-muted text-sm hover:border-border-strong transition-colors"
           >
             <Search className="h-3.5 w-3.5 shrink-0" />
@@ -416,7 +373,6 @@ export function TopNav() {
         </div>
       </header>
 
-      <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
     </>
   );
 }

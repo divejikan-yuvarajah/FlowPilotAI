@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ThumbsUp, ThumbsDown, RefreshCw, Clock } from "lucide-react";
+import { Sparkles, ThumbsUp, ThumbsDown, RefreshCw, Clock, Volume2, VolumeX } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface AiMorningBriefProps {
   bullets: string[];
@@ -33,6 +34,47 @@ export function AiMorningBrief({
 }: AiMorningBriefProps) {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => { speechSynthesis.cancel(); };
+  }, []);
+
+  function handleVoice() {
+    if (isSpeaking) {
+      speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    if (!bullets.length) return;
+
+    const text = bullets.join(". ");
+    const utter = new SpeechSynthesisUtterance(text);
+
+    // Pick best available voice
+    const voices = speechSynthesis.getVoices();
+    const preferred =
+      voices.find(
+        (v) =>
+          v.lang.startsWith("en") &&
+          (v.name.includes("Google") || v.name.includes("Samantha") || v.name.includes("Microsoft")),
+      ) ??
+      voices.find((v) => v.lang.startsWith("en")) ??
+      voices[0];
+
+    if (preferred) utter.voice = preferred;
+    utter.rate = 1.05;
+    utter.pitch = 1.0;
+
+    utter.onend = () => setIsSpeaking(false);
+    utter.onerror = () => setIsSpeaking(false);
+
+    utteranceRef.current = utter;
+    speechSynthesis.speak(utter);
+    setIsSpeaking(true);
+  }
 
   async function handleRegenerate() {
     if (!onRegenerate || isRegenerating) return;
@@ -63,6 +105,30 @@ export function AiMorningBrief({
         <div className="flex items-center gap-1.5 text-xs text-ink-muted">
           <Clock className="h-3 w-3" />
           <span>{relativeTime}</span>
+          {/* Voice button */}
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleVoice}
+                  className={cn(
+                    "ml-1 flex h-6 w-6 items-center justify-center rounded-md transition-colors",
+                    isSpeaking
+                      ? "text-signal-ai bg-signal-ai/10"
+                      : "text-ink-muted hover:text-signal-ai hover:bg-signal-ai/10",
+                  )}
+                  aria-label={isSpeaking ? "Stop speaking" : "Listen to brief"}
+                >
+                  {isSpeaking
+                    ? <VolumeX className="h-3.5 w-3.5" />
+                    : <Volume2 className="h-3.5 w-3.5" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">
+                {isSpeaking ? "Stop" : "Listen"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
