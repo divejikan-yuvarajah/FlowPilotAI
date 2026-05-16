@@ -1,5 +1,18 @@
 import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { LandingPage } from "./(marketing)/landing-client";
 
-export default function RootPage() {
-  redirect("/sign-in");
+/**
+ * Root page: show the marketing landing page to unauthenticated visitors.
+ * Authenticated users are forwarded straight to the War Room.
+ */
+export default async function RootPage() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) redirect("/war-room");
+
+  return <LandingPage />;
 }
