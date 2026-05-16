@@ -183,7 +183,7 @@ function ExpandedContent({ invoice }: { invoice: OverdueInvoiceData }) {
       transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] }}
       className="overflow-hidden"
     >
-      <div className="border-t border-border mx-6 py-4 grid grid-cols-2 gap-6">
+      <div className="border-t border-border mx-4 sm:mx-6 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {/* Payment history */}
         <PaymentSparkline
           avgDaysToPay={invoice.client.avgDaysToPay}
@@ -264,77 +264,67 @@ export function OverdueCard({ invoice, isSelected, onSelect }: OverdueCardProps)
       )}
       onClick={() => setIsExpanded((v) => !v)}
     >
-      {/* Main row */}
-      <div className="grid grid-cols-12 gap-4 px-6 py-5 items-center group">
+      {/* ── Main card content ────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 py-4 space-y-3">
 
-        {/* Checkbox (hover) */}
-        <div className="absolute left-2 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => { e.stopPropagation(); onSelect(invoice.id, !isSelected); }}>
-          <Checkbox checked={isSelected} onCheckedChange={(v) => onSelect(invoice.id, v === true)} />
-        </div>
-
-        {/* Col 1-3: Client */}
-        <div className="col-span-3 min-w-0 space-y-1">
-          <div className="flex items-center gap-2">
-            <p className="font-medium text-base text-ink-primary truncate">{invoice.client.name}</p>
-            <SignalBadge variant={getTrustVariant(invoice.client.riskTier)} size="sm">
-              {invoice.client.riskTier}
-            </SignalBadge>
-            <TrendIcon className={cn("h-3.5 w-3.5 shrink-0", TREND_COLOR[invoice.client.trustTrend])} />
+        {/* Row 1: Client info + days overdue (always visible) */}
+        <div className="flex items-start justify-between gap-3">
+          {/* Client */}
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-semibold text-sm sm:text-base text-ink-primary truncate">{invoice.client.name}</p>
+              <SignalBadge variant={getTrustVariant(invoice.client.riskTier)} size="sm">
+                {invoice.client.riskTier}
+              </SignalBadge>
+              <TrendIcon className={cn("h-3.5 w-3.5 shrink-0", TREND_COLOR[invoice.client.trustTrend])} />
+            </div>
+            <p className="text-xs text-ink-secondary">{invoice.client.businessType}</p>
           </div>
-          <p className="text-sm text-ink-secondary truncate">{invoice.client.businessType}</p>
-          <p className="text-xs text-ink-muted">Trust: {invoice.client.trustScore}/100</p>
+
+          {/* Days overdue — big + prominent */}
+          <div className="text-right shrink-0">
+            <p className={cn("text-2xl font-display font-bold tabular-nums leading-none", getSeverityColor(invoice.daysOverdue))}>
+              {invoice.daysOverdue}d
+            </p>
+            <p className="text-[10px] text-ink-muted mt-0.5">overdue</p>
+          </div>
         </div>
 
-        {/* Col 4-5: Amount */}
-        <div className="col-span-2 space-y-0.5">
-          <p className="font-mono text-xl font-semibold text-ink-primary tabular-nums">
-            {(invoice.amount / 1000).toFixed(0)}k
-          </p>
-          <p className="text-xs text-ink-tertiary font-mono">LKR {invoice.amount.toLocaleString()}</p>
-          <p className="text-xs text-ink-muted">{invoice.invoiceNumber}</p>
+        {/* Row 2: Amount + meta + grade + gauge */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Amount */}
+          <div className="flex-1 min-w-0">
+            <p className="font-mono text-base sm:text-lg font-semibold text-ink-primary tabular-nums">
+              LKR {invoice.amount.toLocaleString()}
+            </p>
+            <p className="text-[11px] text-ink-muted">{invoice.invoiceNumber} · Due {new Date(invoice.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+          </div>
+
+          {/* Grade + gauge (compact) */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-col items-center">
+              <span className={cn("text-xl font-display font-bold", gradeColor)}>{grade}</span>
+              <span className="text-[9px] text-ink-muted">grade</span>
+            </div>
+            <div className="flex items-center gap-0.5">
+              <DefaultProbGauge riskScore={invoice.riskScore} />
+              {invoice.aiRiskReasoning && (
+                <AIReasoningTooltip model="gpt-4o-mini" reasoning={invoice.aiRiskReasoning}>
+                  <Info className="h-3 w-3 text-ink-tertiary hover:text-signal-ai cursor-help" />
+                </AIReasoningTooltip>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Col 6-7: Days overdue */}
-        <div className="col-span-2 space-y-0.5">
-          <p className={cn("text-2xl font-display font-bold tabular-nums", getSeverityColor(invoice.daysOverdue))}>
-            {invoice.daysOverdue}d
-          </p>
-          <p className="text-xs text-ink-muted">
-            Due {new Date(invoice.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-          </p>
-          {invoice.escalationStage && (
-            <p className="text-xs text-ink-tertiary">Stage {invoice.escalationStage}</p>
-          )}
-        </div>
-
-        {/* Col 8: Health grade */}
-        <div className="col-span-1 flex flex-col items-center">
-          <span className={cn("text-2xl font-display font-bold", gradeColor)}>{grade}</span>
-          <span className="text-[10px] text-ink-muted">grade</span>
-        </div>
-
-        {/* Col 9: Default probability gauge + AI tooltip */}
-        <div className="col-span-1 flex justify-center items-center gap-1">
-          <DefaultProbGauge riskScore={invoice.riskScore} />
-          {invoice.aiRiskReasoning && (
-            <AIReasoningTooltip
-              model="gpt-4o-mini"
-              reasoning={invoice.aiRiskReasoning}
-            >
-              <Info className="h-3 w-3 text-ink-tertiary hover:text-signal-ai cursor-help" />
-            </AIReasoningTooltip>
-          )}
-        </div>
-
-        {/* Col 10-12: Actions */}
+        {/* Row 3: Actions */}
         <div
-          className="col-span-3 flex items-center justify-end gap-2"
+          className="flex items-center gap-2 pt-1 border-t border-border"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={handleRecover}
-            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-md bg-pilot-500 hover:bg-pilot-600 text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-medium px-3 py-1.5 rounded-md bg-pilot-500 hover:bg-pilot-600 text-white transition-colors"
           >
             Recover
           </button>
@@ -342,22 +332,22 @@ export function OverdueCard({ invoice, isSelected, onSelect }: OverdueCardProps)
             onClick={handleCopyLink}
             disabled={!invoice.justpayLink}
             title="Copy JustPay link"
-            className="p-2 rounded-md text-ink-muted hover:text-ink-primary hover:bg-bg-muted transition-colors disabled:opacity-30"
+            className="p-1.5 rounded-md text-ink-muted hover:text-ink-primary hover:bg-bg-muted transition-colors disabled:opacity-30"
           >
             {isCopied ? <Check className="h-4 w-4 text-signal-healthy" /> : <Copy className="h-4 w-4" />}
           </button>
           <button
             onClick={handleWhatsApp}
             title="Send WhatsApp"
-            className="p-2 rounded-md text-ink-muted hover:text-signal-healthy hover:bg-signal-healthy/10 transition-colors"
+            className="p-1.5 rounded-md text-ink-muted hover:text-signal-healthy hover:bg-signal-healthy/10 transition-colors"
           >
             <MessageCircle className="h-4 w-4" />
           </button>
-          {isExpanded ? (
-            <ChevronUp className="h-4 w-4 text-ink-muted shrink-0" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-ink-muted shrink-0" />
-          )}
+          <div className="flex-1" />
+          <p className="text-[10px] text-ink-muted">Trust {invoice.client.trustScore}/100</p>
+          {isExpanded
+            ? <ChevronUp className="h-4 w-4 text-ink-muted shrink-0" />
+            : <ChevronDown className="h-4 w-4 text-ink-muted shrink-0" />}
         </div>
       </div>
 

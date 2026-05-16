@@ -87,26 +87,26 @@ export default async function OverduePage() {
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-ink-primary">
+          <h1 className="font-display text-xl sm:text-2xl font-semibold text-ink-primary">
             Overdue Radar
           </h1>
-          <p className="text-sm text-ink-secondary mt-0.5">
+          <p className="text-xs sm:text-sm text-ink-secondary mt-0.5">
             Ranked by recovery priority
           </p>
         </div>
 
         {/* Summary pills */}
-        <div className="flex items-center gap-3">
-          <div className="px-3 py-1.5 rounded-lg border border-border bg-bg-subtle text-center">
-            <p className="text-xs text-ink-muted">Total overdue</p>
-            <p className="font-mono text-sm font-semibold text-signal-danger tabular-nums">
-              LKR {overdueTotal.toLocaleString()}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="px-2.5 py-1.5 rounded-lg border border-border bg-bg-subtle text-center">
+            <p className="text-[10px] text-ink-muted">Overdue</p>
+            <p className="font-mono text-xs sm:text-sm font-semibold text-signal-danger tabular-nums">
+              LKR {(overdueTotal/1000).toFixed(0)}k
             </p>
           </div>
-          <div className="px-3 py-1.5 rounded-lg border border-border bg-bg-subtle text-center">
-            <p className="text-xs text-ink-muted">Invoices</p>
+          <div className="px-2.5 py-1.5 rounded-lg border border-border bg-bg-subtle text-center">
+            <p className="text-[10px] text-ink-muted">Invoices</p>
             <p className="font-display text-sm font-semibold text-ink-primary">
               {invoices.length}
             </p>
