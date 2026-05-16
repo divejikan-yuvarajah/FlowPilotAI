@@ -276,234 +276,168 @@ export function SimulatorClient({ data }: { data: SimPageData }) {
 
   const runwayDelta = stressedRunway - data.baselineRunwayDays;
 
+  const [controlsOpen, setControlsOpen] = useState(true);
+
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 pb-8">
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-ink-primary">
+          <h1 className="font-display text-xl sm:text-2xl font-semibold text-ink-primary">
             Stress Test Simulator
           </h1>
-          <p className="text-sm text-ink-secondary mt-0.5">
+          <p className="text-xs sm:text-sm text-ink-secondary mt-0.5">
             Model worst-case scenarios in real time
           </p>
         </div>
         <button
           onClick={handleClearAll}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-bg-subtle text-sm text-ink-secondary hover:text-ink-primary hover:bg-bg-raised transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-bg-subtle text-xs sm:text-sm text-ink-secondary hover:text-ink-primary hover:bg-bg-raised transition-colors shrink-0"
         >
-          <RotateCcw className="h-4 w-4" />
-          Clear all stress
+          <RotateCcw className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Clear all stress</span>
+          <span className="sm:hidden">Clear</span>
         </button>
       </div>
 
-      {/* ── Three-column grid ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-12 gap-6">
-
-        {/* ── LEFT: Controls ───────────────────────────────────────────── */}
-        <div className="col-span-3 space-y-4 lg:sticky lg:top-6 self-start">
-
-          {/* Client defaults */}
-          <SectionCard title="Client Defaults">
-            <div className="space-y-2.5">
-              {data.clients.map((client) => {
-                const isDefaulted = defaultedClientIds.includes(client.id);
-                return (
-                  <label
-                    key={client.id}
-                    className={cn(
-                      "flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors",
-                      isDefaulted ? "bg-signal-danger/10" : "hover:bg-bg-raised",
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isDefaulted}
-                      onChange={() => toggleDefaultedClient(client.id)}
-                      className="accent-signal-danger"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className={cn("text-xs font-medium truncate", isDefaulted ? "text-signal-danger" : "text-ink-primary")}>
-                        {client.name}
-                      </p>
-                      <p className="text-[10px] text-ink-muted tabular-nums">
-                        LKR {client.openInvoiceTotal.toLocaleString()} at risk
-                      </p>
-                    </div>
-                    <SignalBadge
-                      variant={
-                        client.riskTier === "A" || client.riskTier === "B"
-                          ? "healthy"
-                          : client.riskTier === "C"
-                            ? "watch"
-                            : "danger"
-                      }
-                      size="sm"
-                    >
-                      {client.riskTier}
-                    </SignalBadge>
-                  </label>
-                );
-              })}
-            </div>
-          </SectionCard>
-
-          {/* Expense shock */}
-          <SectionCard title="Expense Shock">
-            <SliderRow
-              label="Increase in daily burn"
-              value={expenseShockPct}
-              min={0} max={50} step={5}
-              unit="%"
-              icon={Flame}
-              onChange={setExpenseShockPct}
-              colorClass={expenseShockPct > 0 ? "text-signal-danger" : "text-ink-muted"}
-            />
-          </SectionCard>
-
-          {/* Revenue shock */}
-          <SectionCard title="Revenue Shock">
-            <SliderRow
-              label="Reduction in inflows"
-              value={revenueShockPct}
-              min={0} max={50} step={5}
-              unit="%"
-              icon={TrendingDown}
-              onChange={setRevenueShockPct}
-              colorClass={revenueShockPct > 0 ? "text-signal-watch" : "text-ink-muted"}
-            />
-          </SectionCard>
-
-          {/* Late threshold */}
-          <SectionCard title="Late Payment Threshold">
-            <SliderRow
-              label="Days before 'at-risk'"
-              value={lateThresholdDays}
-              min={7} max={30} step={1}
-              unit="d"
-              onChange={setLateThresholdDays}
-              colorClass="text-ink-secondary"
-            />
-            <p className="text-[10px] text-ink-muted mt-2">
-              Invoices overdue by more than {lateThresholdDays} days are treated as defaulted.
+      {/* ── 3 Result stat tiles — always visible at top on mobile ──────── */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="bg-surface border border-border rounded-lg p-3 sm:p-4 space-y-1 overflow-hidden">
+          <p className="text-[9px] sm:text-xs uppercase tracking-wider text-ink-tertiary font-medium">Runway</p>
+          <AnimatedNumber
+            value={stressedRunway}
+            format={(v) => `${v}d`}
+            className={cn(
+              "text-xl sm:text-3xl font-display font-bold tabular-nums",
+              runwayStatus === "healthy" ? "text-signal-healthy"
+                : runwayStatus === "watch" ? "text-signal-watch"
+                : runwayStatus === "danger" ? "text-signal-danger"
+                : "text-signal-critical",
+            )}
+          />
+          {isStressActive && runwayDelta !== 0 && (
+            <p className={cn("text-[10px] font-medium tabular-nums flex items-center gap-0.5", runwayDelta < 0 ? "text-signal-danger" : "text-signal-healthy")}>
+              {runwayDelta > 0 ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              {runwayDelta > 0 ? "+" : ""}{runwayDelta}d
             </p>
-          </SectionCard>
+          )}
         </div>
 
-        {/* ── CENTER: Chart + stat tiles ────────────────────────────────── */}
-        <div className="col-span-6 space-y-4">
-          {/* Chart */}
-          <div className="bg-surface border border-border rounded-lg p-5">
-            <div className="flex items-center justify-between mb-4">
+        <div className="bg-surface border border-border rounded-lg p-3 sm:p-4 space-y-1 overflow-hidden">
+          <p className="text-[9px] sm:text-xs uppercase tracking-wider text-ink-tertiary font-medium">Crisis</p>
+          <p className={cn("text-sm sm:text-xl font-display font-bold leading-tight break-words", crisisDate ? "text-signal-danger" : "text-signal-healthy")}>
+            {crisisDate ?? "None"}
+          </p>
+          <p className="text-[9px] sm:text-[10px] text-ink-muted leading-tight">
+            {crisisDate ? "Below LKR 500k" : "Safe"}
+          </p>
+        </div>
+
+        <div className="bg-surface border border-border rounded-lg p-3 sm:p-4 space-y-1 overflow-hidden">
+          <p className="text-[9px] sm:text-xs uppercase tracking-wider text-ink-tertiary font-medium">Gap</p>
+          <AnimatedNumber
+            value={cashGap}
+            format={(v) => v === 0 ? "None" : `${(v/1000).toFixed(0)}k`}
+            className={cn("text-xl sm:text-2xl font-display font-bold tabular-nums", cashGap > 0 ? "text-signal-danger" : "text-signal-healthy")}
+          />
+          <p className="text-[9px] sm:text-[10px] text-ink-muted">Cash shortfall</p>
+        </div>
+      </div>
+
+      {/* ── Main layout — stacked on mobile, 3-col on lg ───────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+        {/* ── Controls — collapsible on mobile ─────────────────────────── */}
+        <div className="lg:col-span-3 lg:sticky lg:top-6 lg:self-start">
+          {/* Mobile collapse toggle */}
+          <button
+            className="lg:hidden w-full flex items-center justify-between px-4 py-3 bg-surface border border-border rounded-lg text-sm font-medium text-ink-primary mb-2"
+            onClick={() => setControlsOpen(!controlsOpen)}
+          >
+            <span>Stress Controls {isStressActive && <span className="ml-1 text-signal-danger text-xs">● Active</span>}</span>
+            {controlsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+
+          <AnimatePresence>
+            {(controlsOpen) && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden lg:overflow-visible space-y-3"
+              >
+                <SectionCard title="Client Defaults">
+                  <div className="space-y-2">
+                    {data.clients.map((client) => {
+                      const isDefaulted = defaultedClientIds.includes(client.id);
+                      return (
+                        <label key={client.id} className={cn("flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors", isDefaulted ? "bg-signal-danger/10" : "hover:bg-bg-raised")}>
+                          <input type="checkbox" checked={isDefaulted} onChange={() => toggleDefaultedClient(client.id)} className="accent-signal-danger shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className={cn("text-xs font-medium truncate", isDefaulted ? "text-signal-danger" : "text-ink-primary")}>{client.name}</p>
+                            <p className="text-[10px] text-ink-muted tabular-nums">LKR {(client.openInvoiceTotal/1000).toFixed(0)}k at risk</p>
+                          </div>
+                          <SignalBadge variant={client.riskTier === "A" || client.riskTier === "B" ? "healthy" : client.riskTier === "C" ? "watch" : "danger"} size="sm">{client.riskTier}</SignalBadge>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </SectionCard>
+
+                <SectionCard title="Expense Shock">
+                  <SliderRow label="Increase in daily burn" value={expenseShockPct} min={0} max={50} step={5} unit="%" icon={Flame} onChange={setExpenseShockPct} colorClass={expenseShockPct > 0 ? "text-signal-danger" : "text-ink-muted"} />
+                </SectionCard>
+
+                <SectionCard title="Revenue Shock">
+                  <SliderRow label="Reduction in inflows" value={revenueShockPct} min={0} max={50} step={5} unit="%" icon={TrendingDown} onChange={setRevenueShockPct} colorClass={revenueShockPct > 0 ? "text-signal-watch" : "text-ink-muted"} />
+                </SectionCard>
+
+                <SectionCard title="Late Payment Threshold">
+                  <SliderRow label="Days before 'at-risk'" value={lateThresholdDays} min={7} max={30} step={1} unit="d" onChange={setLateThresholdDays} colorClass="text-ink-secondary" />
+                  <p className="text-[10px] text-ink-muted mt-2">Invoices &gt; {lateThresholdDays}d overdue treated as defaulted.</p>
+                </SectionCard>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* ── Chart ────────────────────────────────────────────────────── */}
+        <div className="lg:col-span-6">
+          <div className="bg-surface border border-border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
               <div>
                 <h3 className="text-sm font-medium text-ink-primary">Runway Projection</h3>
-                <p className="text-xs text-ink-muted mt-0.5">
-                  {isStressActive
-                    ? "Stressed scenario vs baseline · 90 days"
-                    : "Baseline projection · 90 days"}
+                <p className="text-xs text-ink-muted">
+                  {isStressActive ? "Stressed vs baseline · 90 days" : "Baseline projection · 90 days"}
                 </p>
               </div>
-              <div className="flex items-center gap-3 text-xs">
-                <div className="flex items-center gap-1.5">
-                  <div className="h-0.5 w-5 border-t border-dashed border-ink-muted/50" />
-                  <span className="text-ink-muted">Baseline</span>
-                </div>
-                {isStressActive && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-0.5 w-5 rounded bg-signal-danger" />
-                    <span className="text-signal-danger">Stressed</span>
-                  </div>
-                )}
+              <div className="flex items-center gap-3 text-xs shrink-0">
+                <div className="flex items-center gap-1"><div className="h-0.5 w-4 border-t border-dashed border-ink-muted/50" /><span className="text-ink-muted">Baseline</span></div>
+                {isStressActive && <div className="flex items-center gap-1"><div className="h-0.5 w-4 rounded bg-signal-danger" /><span className="text-signal-danger">Stressed</span></div>}
               </div>
             </div>
-            <div className="h-[260px]">
-              <StressCompareChart
-                data={chartData}
-                dangerThreshold={500_000}
-                isStressActive={isStressActive}
-              />
-            </div>
-          </div>
-
-          {/* 3 stat tiles */}
-          <div className="grid grid-cols-3 gap-4">
-            {/* Runway */}
-            <div className="bg-surface border border-border rounded-lg p-4 space-y-1">
-              <p className="text-xs uppercase tracking-wider text-ink-tertiary font-medium">Runway</p>
-              <AnimatedNumber
-                value={stressedRunway}
-                format={(v) => `${v} days`}
-                className={cn(
-                  "text-3xl font-display font-bold tabular-nums",
-                  runwayStatus === "healthy" ? "text-signal-healthy"
-                    : runwayStatus === "watch" ? "text-signal-watch"
-                    : runwayStatus === "danger" ? "text-signal-danger"
-                    : "text-signal-critical",
-                )}
-              />
-              {isStressActive && runwayDelta !== 0 && (
-                <p className={cn("text-xs font-medium tabular-nums flex items-center gap-1", runwayDelta < 0 ? "text-signal-danger" : "text-signal-healthy")}>
-                  {runwayDelta > 0 ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                  {runwayDelta > 0 ? "+" : ""}{runwayDelta} vs baseline
-                </p>
-              )}
-            </div>
-
-            {/* Crisis date */}
-            <div className="bg-surface border border-border rounded-lg p-4 space-y-1">
-              <p className="text-xs uppercase tracking-wider text-ink-tertiary font-medium">Crisis Date</p>
-              <p className={cn(
-                "text-xl font-display font-bold leading-tight",
-                crisisDate ? "text-signal-danger" : "text-signal-healthy",
-              )}>
-                {crisisDate ?? "None"}
-              </p>
-              <p className="text-[10px] text-ink-muted">
-                {crisisDate ? "Balance drops below LKR 500k" : "Balance stays above LKR 500k"}
-              </p>
-            </div>
-
-            {/* Cash gap */}
-            <div className="bg-surface border border-border rounded-lg p-4 space-y-1">
-              <p className="text-xs uppercase tracking-wider text-ink-tertiary font-medium">Cash Gap</p>
-              <AnimatedNumber
-                value={cashGap}
-                format={(v) => v === 0 ? "None" : `LKR ${v.toLocaleString()}`}
-                className={cn(
-                  "text-xl font-display font-bold tabular-nums",
-                  cashGap > 0 ? "text-signal-danger" : "text-signal-healthy",
-                )}
-              />
-              <p className="text-[10px] text-ink-muted">Shortfall below danger threshold</p>
+            <div className="h-[220px] sm:h-[260px]">
+              <StressCompareChart data={chartData} dangerThreshold={500_000} isStressActive={isStressActive} />
             </div>
           </div>
         </div>
 
-        {/* ── RIGHT: AI Survival Plan ───────────────────────────────────── */}
-        <div className="col-span-3">
+        {/* ── AI Survival Plan ─────────────────────────────────────────── */}
+        <div className="lg:col-span-3">
           <div className="bg-surface border border-border border-l-2 border-l-signal-ai rounded-lg overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-signal-ai shrink-0" />
               <span className="text-sm font-medium text-signal-ai">AI Survival Plan</span>
-              {isFetchingSurvival && (
-                <Loader2 className="h-3.5 w-3.5 text-signal-ai animate-spin ml-auto" />
-              )}
+              {isFetchingSurvival && <Loader2 className="h-3.5 w-3.5 text-signal-ai animate-spin ml-auto" />}
             </div>
-
             <div className="p-4">
               <AnimatePresence mode="wait">
                 {!isStressActive && (
-                  <motion.p
-                    key="idle"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-xs text-ink-muted text-center py-6"
-                  >
+                  <motion.p key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-ink-muted text-center py-6">
                     Apply stress to generate a survival plan.
                   </motion.p>
                 )}
-
                 {isStressActive && isFetchingSurvival && survivalActions.length === 0 && (
                   <motion.div key="loading" className="space-y-3">
                     {[...Array(4)].map((_, i) => (
@@ -515,27 +449,13 @@ export function SimulatorClient({ data }: { data: SimPageData }) {
                     ))}
                   </motion.div>
                 )}
-
                 {survivalActions.length > 0 && (
-                  <motion.div
-                    key="actions"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="space-y-4"
-                  >
+                  <motion.div key="actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                     {survivalActions.map((action, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: 8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.08 }}
-                        className="space-y-1"
-                      >
+                      <motion.div key={i} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }} className="space-y-1">
                         <div className="flex items-start gap-2">
                           <PriorityBadge n={action.priority} />
-                          <p className="text-xs font-medium text-ink-primary leading-snug">
-                            {action.action}
-                          </p>
+                          <p className="text-xs font-medium text-ink-primary leading-snug">{action.action}</p>
                         </div>
                         <div className="pl-7 space-y-0.5">
                           <p className="text-[10px] text-ink-secondary">{action.impact}</p>
