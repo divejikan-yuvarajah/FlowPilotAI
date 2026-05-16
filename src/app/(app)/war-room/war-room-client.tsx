@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { DollarSign, Clock, TrendingDown } from "lucide-react";
 import { useStressTestStore } from "@/store/stress-test";
@@ -11,7 +12,18 @@ import { AiMorningBrief } from "@/components/widgets/ai-morning-brief";
 import { CriticalActionsList, type CriticalAction } from "@/components/widgets/critical-actions-list";
 import { OverdueInvoiceList, type OverdueInvoice } from "@/components/widgets/overdue-invoice-list";
 import { ActivityFeed, type AlertEntry } from "@/components/widgets/activity-feed";
-import { RunwayAreaChart, type ChartPoint } from "@/components/charts/runway-area-chart";
+import type { ChartPoint } from "@/components/charts/runway-area-chart";
+
+// Recharts is ~200KB — lazy load so it doesn't block the initial paint
+const RunwayAreaChart = dynamic(
+  () => import("@/components/charts/runway-area-chart").then((m) => ({ default: m.RunwayAreaChart })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full bg-bg-muted rounded-xl animate-pulse min-h-[280px]" />
+    ),
+  },
+);
 
 type HealthStatus = "healthy" | "watch" | "danger" | "critical";
 

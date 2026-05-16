@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   Sparkles,
@@ -19,8 +20,19 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BurnRateChart, type BurnDataPoint } from "@/components/charts/burn-rate-chart";
-import { ExpenseDonut, type CategorySlice } from "@/components/charts/expense-donut";
+import type { BurnDataPoint } from "@/components/charts/burn-rate-chart";
+import type { CategorySlice } from "@/components/charts/expense-donut";
+
+const CHART_FALLBACK = <div className="h-full w-full bg-bg-muted rounded-xl animate-pulse min-h-[200px]" />;
+
+const BurnRateChart = dynamic(
+  () => import("@/components/charts/burn-rate-chart").then((m) => ({ default: m.BurnRateChart })),
+  { ssr: false, loading: () => CHART_FALLBACK },
+);
+const ExpenseDonut = dynamic(
+  () => import("@/components/charts/expense-donut").then((m) => ({ default: m.ExpenseDonut })),
+  { ssr: false, loading: () => CHART_FALLBACK },
+);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

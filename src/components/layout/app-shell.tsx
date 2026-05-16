@@ -1,12 +1,37 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { Sidebar, MobileSidebar } from "@/components/layout/sidebar";
+import dynamic from "next/dynamic";
+import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/topnav";
 import { ActivityTicker } from "@/components/layout/activity-ticker";
-import { AssistantMount } from "@/components/ai/assistant-mount";
-import { CommandPalette } from "@/components/shell/command-palette";
-import { InvoiceRealtimeProvider } from "@/hooks/use-invoice-realtime";
+
+// ── Lazy-loaded overlays ──────────────────────────────────────────────────────
+// These are NOT needed on first paint — load them after the page is visible.
+
+// MobileSidebar: sheet only used on <md screens — skip on desktop entirely
+const MobileSidebar = dynamic(
+  () => import("@/components/layout/sidebar").then((m) => ({ default: m.MobileSidebar })),
+  { ssr: false },
+);
+
+// AssistantMount: Sparkles button + panel — heavy (Zustand, framer, Sheet)
+const AssistantMount = dynamic(
+  () => import("@/components/ai/assistant-mount").then((m) => ({ default: m.AssistantMount })),
+  { ssr: false },
+);
+
+// CommandPalette: cmdk library — only needed on ⌘K press
+const CommandPalette = dynamic(
+  () => import("@/components/shell/command-palette").then((m) => ({ default: m.CommandPalette })),
+  { ssr: false },
+);
+
+// InvoiceRealtimeProvider: canvas-confetti + Supabase realtime — background feature
+const InvoiceRealtimeProvider = dynamic(
+  () => import("@/hooks/use-invoice-realtime").then((m) => ({ default: m.InvoiceRealtimeProvider })),
+  { ssr: false },
+);
 
 const PAGE_SKELETON = (
   <div className="space-y-4 animate-pulse px-1">
