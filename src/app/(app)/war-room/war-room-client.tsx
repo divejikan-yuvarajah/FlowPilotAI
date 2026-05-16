@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { DollarSign, Clock, TrendingDown } from "lucide-react";
 import { useStressTestStore } from "@/store/stress-test";
+import { useAssistantStore } from "@/store/assistant-store";
 import { StatTile } from "@/components/ui/stat-tile";
 import { HealthScoreGauge } from "@/components/widgets/health-score-gauge";
 import { AiMorningBrief } from "@/components/widgets/ai-morning-brief";
@@ -102,11 +103,32 @@ function runwayStatus(days: number): "healthy" | "watch" | "danger" | "critical"
 export function WarRoomClient({ data }: { data: WarRoomData }) {
   const { balance, isStressActive, activateStress, deactivateStress } =
     useStressTestStore();
+  const { addSuggestion } = useAssistantStore();
+  const suggestionsFiredfRef = useRef(false);
 
   const [liveBalance, setLiveBalance] = useState(data.initialBalance);
   const [briefBullets, setBriefBullets] = useState(
     data.cfoBrief?.bullets ?? [],
   );
+
+  // Proactive AI suggestions — fire once after data loads
+  useEffect(() => {
+    if (suggestionsFiredfRef.current) return;
+    suggestionsFiredfRef.current = true;
+
+    const topOverdue = data.overdueInvoices[0];
+    if (topOverdue && topOverdue.daysOverdue >= 7) {
+      addSuggestion(
+        `I noticed **${topOverdue.clientName}** is ${topOverdue.daysOverdue} days overdue on ${topOverdue.invoiceNumber} (LKR ${topOverdue.amount.toLocaleString()}). Want to draft a recovery message?`,
+      );
+    }
+
+    if (data.runwayDays < 14) {
+      addSuggestion(
+        `Your runway is ${data.runwayDays} days — below the 14-day safety threshold. Want to see what changed?`,
+      );
+    }
+  }, [data, addSuggestion]);
 
   // Sync live balance → Zustand store
   useEffect(() => {

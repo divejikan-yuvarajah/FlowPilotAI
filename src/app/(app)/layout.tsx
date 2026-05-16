@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/topnav";
 import { CrisisBanner } from "@/components/layout/crisis-banner";
+import { AssistantMount } from "@/components/ai/assistant-mount";
 
 // In a future PR, runwayDays will be fetched from the DB via a server action.
 // For the demo, we use 5 to activate the crisis banner.
@@ -25,6 +26,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="max-w-[1440px] mx-auto px-8 py-6">{children}</div>
         </main>
       </div>
+
+      {/* AI Assistant — floating button + slide-over panel */}
+      <AssistantMount />
     </div>
   );
 }
