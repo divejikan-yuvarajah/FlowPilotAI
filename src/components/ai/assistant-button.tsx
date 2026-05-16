@@ -1,12 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAssistantStore } from "@/store/assistant-store";
 
 export function AssistantButton() {
   const { toggleOpen, hasUnreadSuggestions } = useAssistantStore();
-  const unread = hasUnreadSuggestions();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const unread = mounted && hasUnreadSuggestions();
 
   return (
     <button
