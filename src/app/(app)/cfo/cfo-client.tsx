@@ -248,30 +248,24 @@ export function CfoDashboardClient({ data }: { data: CfoDashboardData }) {
   return (
     <div className="space-y-6 pb-8">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-ink-primary">
+          <h1 className="font-display text-xl sm:text-2xl font-semibold text-ink-primary">
             AI CFO Dashboard
           </h1>
-          <p className="text-sm text-ink-secondary mt-0.5">
-            Financial intelligence powered by GPT-4o-mini
+          <p className="text-xs sm:text-sm text-ink-secondary mt-0.5">
+            Financial intelligence · GPT-4o-mini
           </p>
         </div>
         <button
           onClick={handleGenerateBrief}
           disabled={isGenerating}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white text-sm font-medium transition-colors disabled:opacity-60"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white text-xs sm:text-sm font-medium transition-colors disabled:opacity-60 shrink-0"
         >
           {isGenerating ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Generating…
-            </>
+            <><Loader2 className="h-3.5 w-3.5 animate-spin" />Generating…</>
           ) : (
-            <>
-              <Sparkles className="h-4 w-4" />
-              Generate today's CFO brief
-            </>
+            <><Sparkles className="h-3.5 w-3.5" /><span className="hidden sm:inline">Generate today's </span>CFO brief</>
           )}
         </button>
       </div>
@@ -316,53 +310,45 @@ export function CfoDashboardClient({ data }: { data: CfoDashboardData }) {
         )}
       </AnimatePresence>
 
-      {/* ── ROW 1: 4 StatTiles ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-3">
-          <StatTile
-            label="Burn Rate"
-            value={data.burnRateDaily}
-            format={(v) => `LKR ${v.toLocaleString()}`}
-            status={data.burnRateDaily > 50_000 ? "danger" : data.burnRateDaily > 25_000 ? "watch" : "healthy"}
-            deltaLabel="per day (30d avg)"
-          />
-        </div>
-        <div className="col-span-3">
-          <StatTile
-            label="Runway"
-            value={data.runwayDays}
-            format={(v) => `${v} days`}
-            status={runwayStatus}
-            delta={-3}
-            deltaLabel="vs last week"
-          />
-        </div>
-        <div className="col-span-3">
-          <StatTile
-            label="Efficiency Score"
-            value={data.efficiencyScore}
-            format={(v) => `${v}/100`}
-            status={data.efficiencyScore >= 75 ? "healthy" : data.efficiencyScore >= 50 ? "watch" : "danger"}
-            deltaLabel="revenue / expense"
-          />
-        </div>
-        <div className="col-span-3">
-          <StatTile
-            label="Anomalies"
-            value={data.anomalyCount}
-            format={(v) => `${v} flagged`}
-            status={data.anomalyCount === 0 ? "healthy" : data.anomalyCount <= 2 ? "watch" : "danger"}
-            deltaLabel="this month"
-          />
-        </div>
+      {/* ── ROW 1: 4 StatTiles — 2×2 on mobile, 4×1 on lg ──────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatTile
+          label="Burn Rate"
+          value={data.burnRateDaily}
+          format={(v) => `LKR ${(v/1000).toFixed(0)}k`}
+          status={data.burnRateDaily > 50_000 ? "danger" : data.burnRateDaily > 25_000 ? "watch" : "healthy"}
+          deltaLabel="per day"
+        />
+        <StatTile
+          label="Runway"
+          value={data.runwayDays}
+          format={(v) => `${v}d`}
+          status={runwayStatus}
+          delta={-3}
+          deltaLabel="vs last week"
+        />
+        <StatTile
+          label="Efficiency"
+          value={data.efficiencyScore}
+          format={(v) => `${v}/100`}
+          status={data.efficiencyScore >= 75 ? "healthy" : data.efficiencyScore >= 50 ? "watch" : "danger"}
+          deltaLabel="score"
+        />
+        <StatTile
+          label="Anomalies"
+          value={data.anomalyCount}
+          format={(v) => `${v}`}
+          status={data.anomalyCount === 0 ? "healthy" : data.anomalyCount <= 2 ? "watch" : "danger"}
+          deltaLabel="flagged"
+        />
       </div>
 
-      {/* ── ROW 2: Charts ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-7 min-h-[300px]">
+      {/* ── ROW 2: Charts — stacked on mobile, side-by-side on lg ────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-7 h-[240px] sm:h-[300px]">
           <BurnRateChart data={burnTrendData} avgBurnRate={data.burnRateDaily} />
         </div>
-        <div className="col-span-5 min-h-[300px]">
+        <div className="lg:col-span-5 h-[260px] sm:h-[300px]">
           <ExpenseDonut
             data={data.expenseByCategory}
             totalAmount={data.totalMonthlyExpense}
@@ -372,13 +358,13 @@ export function CfoDashboardClient({ data }: { data: CfoDashboardData }) {
         </div>
       </div>
 
-      {/* ── ROW 3: Recommendations ──────────────────────────────────────── */}
+      {/* ── ROW 3: Recommendations — stacked on mobile, 3-col on lg ──────── */}
       <div className="space-y-3">
-        <h2 className="font-display text-base font-semibold text-ink-primary flex items-center gap-2">
+        <h2 className="font-display text-sm sm:text-base font-semibold text-ink-primary flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-signal-ai" />
           AI CFO Recommendations
         </h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <RecommendationPanel priority="urgent" items={data.urgentRecs} />
           <RecommendationPanel priority="important" items={data.importantRecs} />
           <RecommendationPanel priority="suggested" items={data.suggestedRecs} />
