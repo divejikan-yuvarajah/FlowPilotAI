@@ -1,3 +1,5 @@
+"use client";
+
 import { type LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnimatedNumber } from "./animated-number";
@@ -7,7 +9,12 @@ type Status = "healthy" | "watch" | "danger" | "critical";
 interface StatTileProps {
   label: string;
   value: number;
-  format?: (v: number) => string;
+  /** Serializable prefix e.g. "LKR " */
+  prefix?: string;
+  /** Serializable suffix e.g. " days" */
+  suffix?: string;
+  /** Decimal places (default 0) */
+  decimals?: number;
   status?: Status;
   delta?: number;
   deltaLabel?: string;
@@ -25,7 +32,9 @@ const statusValueClass: Record<Status, string> = {
 export function StatTile({
   label,
   value,
-  format,
+  prefix = "",
+  suffix = "",
+  decimals = 0,
   status = "healthy",
   delta,
   deltaLabel,
@@ -52,9 +61,7 @@ export function StatTile({
     >
       {/* Label row */}
       <div className="flex items-center gap-1.5">
-        {Icon && (
-          <Icon className="h-3.5 w-3.5 text-ink-tertiary shrink-0" />
-        )}
+        {Icon && <Icon className="h-3.5 w-3.5 text-ink-tertiary shrink-0" />}
         <span className="text-xs uppercase tracking-wider text-ink-tertiary font-medium">
           {label}
         </span>
@@ -63,7 +70,9 @@ export function StatTile({
       {/* Value */}
       <AnimatedNumber
         value={value}
-        format={format}
+        prefix={prefix}
+        suffix={suffix}
+        decimals={decimals}
         className={cn(
           "text-xl sm:text-3xl font-display font-semibold leading-tight tabular-nums",
           statusValueClass[status],
@@ -78,9 +87,7 @@ export function StatTile({
             {delta > 0 ? "+" : ""}
             {delta}
           </span>
-          {deltaLabel && (
-            <span className="text-ink-muted">{deltaLabel}</span>
-          )}
+          {deltaLabel && <span className="text-ink-muted">{deltaLabel}</span>}
         </div>
       )}
     </div>

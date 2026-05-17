@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -210,7 +210,7 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
           <StatTile
             label="Cash Position"
             value={displayBalance}
-            format={(v) => `LKR ${v.toLocaleString()}`}
+            prefix="LKR "
             status={displayBalance < 500_000 ? "danger" : displayBalance < 1_000_000 ? "watch" : "healthy"}
             delta={isStressActive ? Math.round(displayBalance - data.initialBalance) : undefined}
             deltaLabel="vs baseline"
@@ -223,7 +223,7 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
           <StatTile
             label="Runway"
             value={data.runwayDays}
-            format={(v) => `${v} days`}
+            suffix=" days"
             status={rStatus}
             delta={-3}
             deltaLabel="vs last week"
@@ -246,7 +246,7 @@ export function WarRoomClient({ data }: { data: WarRoomData }) {
             <StatTile
               label="Overdue Total"
               value={data.overdueTotal}
-              format={(v) => `LKR ${v.toLocaleString()}`}
+              prefix="LKR "
               status={data.overdueTotal > 400_000 ? "danger" : "watch"}
               delta={data.overdueInvoices.length}
               deltaLabel="invoices"

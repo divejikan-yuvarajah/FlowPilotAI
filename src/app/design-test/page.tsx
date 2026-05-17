@@ -1,4 +1,4 @@
-// Disable static generation — this page renders live UI components
+﻿// Disable static generation — this page renders live UI components
 export const dynamic = "force-dynamic";
 
 import { Clock, DollarSign, TrendingUp, AlertTriangle } from "lucide-react";
@@ -58,7 +58,7 @@ export default function DesignTestPage() {
             <p className="text-xs text-ink-muted">Currency (LKR)</p>
             <AnimatedNumber
               value={1247500}
-              format={(v) => `LKR ${v.toLocaleString()}`}
+              prefix="LKR "
               className="text-4xl font-display font-semibold text-ink-primary tabular-nums"
             />
           </div>
@@ -66,7 +66,7 @@ export default function DesignTestPage() {
             <p className="text-xs text-ink-muted">Days</p>
             <AnimatedNumber
               value={14}
-              format={(v) => `${v} days`}
+              suffix=" days"
               className="text-4xl font-display font-semibold text-signal-watch tabular-nums"
             />
           </div>
@@ -74,7 +74,7 @@ export default function DesignTestPage() {
             <p className="text-xs text-ink-muted">Percentage</p>
             <AnimatedNumber
               value={92}
-              format={(v) => `${v}%`}
+              suffix="%"
               className="text-4xl font-display font-semibold text-signal-healthy tabular-nums"
             />
           </div>
@@ -129,7 +129,7 @@ export default function DesignTestPage() {
           <StatTile
             label="Runway"
             value={14}
-            format={(v) => `${v} days`}
+            suffix=" days"
             status="watch"
             delta={-3}
             deltaLabel="vs last week"
@@ -138,7 +138,7 @@ export default function DesignTestPage() {
           <StatTile
             label="Cash Balance"
             value={1247500}
-            format={(v) => `LKR ${v.toLocaleString()}`}
+            prefix="LKR "
             status="healthy"
             delta={82000}
             deltaLabel="this month"
@@ -147,7 +147,7 @@ export default function DesignTestPage() {
           <StatTile
             label="Overdue Invoices"
             value={7}
-            format={(v) => `${v} invoices`}
+            suffix=" invoices"
             status="danger"
             delta={2}
             deltaLabel="since yesterday"
@@ -156,7 +156,7 @@ export default function DesignTestPage() {
           <StatTile
             label="Burn Rate"
             value={340000}
-            format={(v) => `LKR ${v.toLocaleString()}`}
+            prefix="LKR "
             status="critical"
             delta={-15000}
             deltaLabel="vs last month"

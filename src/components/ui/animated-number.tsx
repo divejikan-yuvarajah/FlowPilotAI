@@ -6,24 +6,29 @@ import { cn } from "@/lib/utils";
 
 interface AnimatedNumberProps {
   value: number;
-  format?: (v: number) => string;
+  /** Serializable prefix string e.g. "LKR " */
+  prefix?: string;
+  /** Serializable suffix string e.g. " days" */
+  suffix?: string;
+  /** Number of decimal places (default 0) */
+  decimals?: number;
   className?: string;
 }
 
 export function AnimatedNumber({
   value,
-  format,
+  prefix = "",
+  suffix = "",
+  decimals = 0,
   className,
 }: AnimatedNumberProps) {
-  const spring = useSpring(value, {
-    mass: 0.8,
-    stiffness: 75,
-    damping: 15,
-  });
+  const spring = useSpring(value, { mass: 0.8, stiffness: 75, damping: 15 });
 
   const display = useTransform(spring, (current) => {
-    const rounded = Math.round(current);
-    return format ? format(rounded) : rounded.toLocaleString();
+    const rounded = decimals > 0
+      ? current.toFixed(decimals)
+      : Math.round(current).toLocaleString();
+    return `${prefix}${rounded}${suffix}`;
   });
 
   useEffect(() => {

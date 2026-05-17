@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
@@ -315,14 +315,15 @@ export function CfoDashboardClient({ data }: { data: CfoDashboardData }) {
         <StatTile
           label="Burn Rate"
           value={data.burnRateDaily}
-          format={(v) => `LKR ${(v/1000).toFixed(0)}k`}
+          prefix="LKR "
+          suffix="k"
           status={data.burnRateDaily > 50_000 ? "danger" : data.burnRateDaily > 25_000 ? "watch" : "healthy"}
           deltaLabel="per day"
         />
         <StatTile
           label="Runway"
           value={data.runwayDays}
-          format={(v) => `${v}d`}
+          suffix="d"
           status={runwayStatus}
           delta={-3}
           deltaLabel="vs last week"
@@ -330,14 +331,14 @@ export function CfoDashboardClient({ data }: { data: CfoDashboardData }) {
         <StatTile
           label="Efficiency"
           value={data.efficiencyScore}
-          format={(v) => `${v}/100`}
+          suffix="/100"
           status={data.efficiencyScore >= 75 ? "healthy" : data.efficiencyScore >= 50 ? "watch" : "danger"}
           deltaLabel="score"
         />
         <StatTile
           label="Anomalies"
           value={data.anomalyCount}
-          format={(v) => `${v}`}
+          
           status={data.anomalyCount === 0 ? "healthy" : data.anomalyCount <= 2 ? "watch" : "danger"}
           deltaLabel="flagged"
         />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -33,7 +33,9 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-export default function SignInPage() {
+// useSearchParams requires a Suspense boundary in production builds.
+// Wrap the real page content and export a Suspense-wrapped default.
+function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const oauthError = searchParams.get("error") === "oauth_failed";
@@ -262,5 +264,18 @@ export default function SignInPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="space-y-4 animate-pulse">
+      <div className="h-8 w-48 bg-bg-muted rounded" />
+      <div className="h-4 w-64 bg-bg-muted rounded" />
+      <div className="h-10 w-full bg-bg-muted rounded-lg" />
+      <div className="h-10 w-full bg-bg-muted rounded-lg" />
+    </div>}>
+      <SignInContent />
+    </Suspense>
   );
 }

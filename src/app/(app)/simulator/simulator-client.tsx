@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -306,7 +306,7 @@ export function SimulatorClient({ data }: { data: SimPageData }) {
           <p className="text-[9px] sm:text-xs uppercase tracking-wider text-ink-tertiary font-medium">Runway</p>
           <AnimatedNumber
             value={stressedRunway}
-            format={(v) => `${v}d`}
+            suffix="d"
             className={cn(
               "text-xl sm:text-3xl font-display font-bold tabular-nums",
               runwayStatus === "healthy" ? "text-signal-healthy"
@@ -337,7 +337,8 @@ export function SimulatorClient({ data }: { data: SimPageData }) {
           <p className="text-[9px] sm:text-xs uppercase tracking-wider text-ink-tertiary font-medium">Gap</p>
           <AnimatedNumber
             value={cashGap}
-            format={(v) => v === 0 ? "None" : `${(v/1000).toFixed(0)}k`}
+            suffix="k"
+            decimals={0}
             className={cn("text-xl sm:text-2xl font-display font-bold tabular-nums", cashGap > 0 ? "text-signal-danger" : "text-signal-healthy")}
           />
           <p className="text-[9px] sm:text-[10px] text-ink-muted">Cash shortfall</p>

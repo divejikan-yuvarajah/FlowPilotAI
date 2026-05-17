@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Clock, TrendingDown, AlertTriangle, DollarSign } from "lucide-react";
@@ -33,7 +33,7 @@ export function WarRoomPreview() {
         <StatTile
           label="Runway"
           value={runway}
-          format={(v) => `${v} days`}
+          suffix=" days"
           status="watch"
           delta={-3}
           deltaLabel="vs last week"

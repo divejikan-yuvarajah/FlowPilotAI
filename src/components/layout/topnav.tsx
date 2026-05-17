@@ -179,17 +179,21 @@ function BalancePill() {
 
       <TrendIcon className={cn("h-3.5 w-3.5 shrink-0", trendColor)} />
 
-      {/* On mobile: show abbreviated amount */}
+      {/* Mobile: abbreviated  |  Desktop: full amount */}
+      <AnimatedNumber
+        value={Math.round(displayBalance / 1000)}
+        prefix="LKR "
+        suffix="k"
+        className={cn(
+          "sm:hidden font-display font-semibold text-xs tabular-nums tracking-tight",
+          isStressActive ? "text-signal-danger" : "text-ink-primary",
+        )}
+      />
       <AnimatedNumber
         value={displayBalance}
-        format={(v) => {
-          if (typeof window !== "undefined" && window.innerWidth < 640) {
-            return `LKR ${(v / 1000).toFixed(0)}k`;
-          }
-          return `LKR ${v.toLocaleString()}`;
-        }}
+        prefix="LKR "
         className={cn(
-          "font-display font-semibold text-xs sm:text-sm tabular-nums tracking-tight",
+          "hidden sm:inline font-display font-semibold text-sm tabular-nums tracking-tight",
           isStressActive ? "text-signal-danger" : "text-ink-primary",
         )}
       />
