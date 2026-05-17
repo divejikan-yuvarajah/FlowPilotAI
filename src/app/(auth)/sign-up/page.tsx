@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { getSiteOrigin } from "@/lib/auth/site-url";
 
 const schema = z.object({
   businessName: z.string().min(1, "Business name is required"),
@@ -110,7 +111,7 @@ export default function SignUpPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${getSiteOrigin()}/auth/callback`,
       },
     });
     if (error) {

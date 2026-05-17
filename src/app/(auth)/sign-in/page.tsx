@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getSiteOrigin } from "@/lib/auth/site-url";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
@@ -81,7 +82,7 @@ function SignInContent() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${getSiteOrigin()}/auth/callback`,
       },
     });
     if (error) {
@@ -101,7 +102,7 @@ function SignInContent() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: `${getSiteOrigin()}/auth/callback` },
     });
     setMagicLoading(false);
     if (error) {
