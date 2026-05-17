@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import {
-  Bell, Building2, CheckCircle2, ChevronRight, Clock,
-  Globe, Key, Lock, Mail, Phone, Shield, Smartphone,
+  Bell, Building2, CheckCircle2, Clock,
+  Shield,
   User, Users, Wifi, Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SecurityClient } from "./security/security-client";
 
 // ─── Toggle switch ────────────────────────────────────────────────────────────
 
@@ -235,50 +236,9 @@ function TeamTab() {
 }
 
 // ─── Security tab ─────────────────────────────────────────────────────────────
-
-function SecurityTab() {
-  const [twoFa, setTwoFa] = useState(false);
-
-  return (
-    <div className="space-y-4">
-      <SectionCard title="Authentication">
-        <SettingRow label="Two-factor authentication" sub="Adds an extra layer of security to your account">
-          <Toggle checked={twoFa} onChange={() => setTwoFa(!twoFa)} />
-        </SettingRow>
-        <SettingRow label="Password" sub="Last changed 45 days ago">
-          <button className="text-xs text-pilot-400 hover:underline flex items-center gap-1">
-            Change <ChevronRight className="h-3 w-3" />
-          </button>
-        </SettingRow>
-      </SectionCard>
-
-      <SectionCard title="Active sessions">
-        {[
-          { device: "Chrome · Windows 11",  location: "Colombo, LK",   last: "Now",       current: true },
-          { device: "Safari · iPhone 15",   location: "Colombo, LK",   last: "2h ago",    current: false },
-          { device: "Chrome · MacBook Pro", location: "Kandy, LK",     last: "Yesterday", current: false },
-        ].map((s) => (
-          <div key={s.device} className="flex items-center gap-3 py-3 border-b border-border last:border-0">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-bg-muted">
-              {s.device.includes("iPhone") ? <Smartphone className="h-4 w-4 text-ink-muted" /> : <Globe className="h-4 w-4 text-ink-muted" />}
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-ink-primary">{s.device}</p>
-              <p className="text-[11px] text-ink-muted">{s.location} · {s.last}</p>
-            </div>
-            {s.current
-              ? <span className="text-[10px] text-signal-healthy font-medium">Current</span>
-              : <button className="text-[11px] text-signal-danger hover:underline">Revoke</button>}
-          </div>
-        ))}
-      </SectionCard>
-
-      <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-signal-danger/30 text-sm font-medium text-signal-danger hover:bg-signal-danger/5 transition-colors">
-        <Lock className="h-4 w-4" /> Sign out everywhere
-      </button>
-    </div>
-  );
-}
+// Real implementation lives in ./security/security-client.tsx — backed by
+// Supabase Auth (password change, MFA enrollment, auth.sessions list).
+const SecurityTab = SecurityClient;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 

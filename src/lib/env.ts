@@ -18,6 +18,14 @@ const envSchema = z.object({
   SEYLAN_TEST_CEFTS_DEST_ACCOUNT: z.string().min(1).default("12345678"),
   SEYLAN_TEST_CEFTS_DEST_BANK: z.string().min(1).default("6990"),
   SEYLAN_REQUEST_TIMEOUT_MS: z.coerce.number().default(20000),
+
+  // ─── Mastercard Payment Gateway (MPGS) ───────────────────────────────────
+  MPGS_BASE_URL: z.string().url().default("https://test-seylan.mtf.gateway.mastercard.com"),
+  MPGS_API_VERSION: z.string().min(1).default("73"),
+  MPGS_MERCHANT_ID: z.string().min(1).default("TESTCURSOR2"),
+  MPGS_API_PASSWORD: z.string().default(""),
+  MPGS_RETURN_URL_BASE: z.string().url().default("http://localhost:3000"),
+  MPGS_CURRENCY: z.string().default("LKR"),
 });
 
 export type Env = z.infer<typeof envSchema>;

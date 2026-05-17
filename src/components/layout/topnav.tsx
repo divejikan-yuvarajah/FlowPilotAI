@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
+  CheckCheck,
   Menu,
   Moon,
   Search,
@@ -13,8 +14,12 @@ import {
   TrendingUp,
   User,
   LogOut,
+  AlertTriangle,
+  Zap,
+  CreditCard,
+  Activity,
+  X,
 } from "lucide-react";
-// Dialog/Header imports no longer needed here (command palette moved to shell)
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
@@ -30,6 +35,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -179,7 +189,7 @@ function BalancePill() {
           return `LKR ${v.toLocaleString()}`;
         }}
         className={cn(
-          "font-mono text-xs sm:text-sm tabular-nums",
+          "font-display font-semibold text-xs sm:text-sm tabular-nums tracking-tight",
           isStressActive ? "text-signal-danger" : "text-ink-primary",
         )}
       />
@@ -207,13 +217,13 @@ function BalancePill() {
           <div className="space-y-2 text-xs">
             <div className="flex items-center justify-between gap-4 pb-2 border-b border-border">
               <span className="text-ink-muted">Available</span>
-              <span className="font-mono font-semibold text-ink-primary tabular-nums">
+              <span className="font-display font-semibold text-ink-primary tabular-nums tracking-tight">
                 LKR {(liveData?.balance ?? 0).toLocaleString()}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
               <span className="text-ink-muted">Ledger</span>
-              <span className="font-mono text-ink-secondary tabular-nums">
+              <span className="font-display font-medium text-ink-secondary tabular-nums tracking-tight">
                 LKR {(liveData?.ledgerBalance ?? 0).toLocaleString()}
               </span>
             </div>
@@ -249,6 +259,172 @@ function BalancePill() {
   );
 }
 
+// ─── Notification panel ────────────────────────────────────────────────────
+
+interface AlertRow {
+  id: string;
+  rule_name: string;
+  triggered_at: string;
+  outcome: string;
+  action_taken: string | null;
+  metadata: Record<string, unknown> | null;
+}
+
+const OUTCOME_ICON: Record<string, React.ElementType> = {
+  success: CheckCheck,
+  no_response: AlertTriangle,
+  overdue: AlertTriangle,
+  payment_received: CreditCard,
+  anomaly: Activity,
+};
+
+const OUTCOME_COLOR: Record<string, string> = {
+  success: "text-signal-healthy bg-signal-healthy/10",
+  no_response: "text-signal-watch bg-signal-watch/10",
+  overdue: "text-signal-danger bg-signal-danger/10",
+  payment_received: "text-signal-ai bg-signal-ai/10",
+  anomaly: "text-signal-watch bg-signal-watch/10",
+};
+
+function NotificationPanel() {
+  const [alerts, setAlerts] = useState<AlertRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const supabase = createClient();
+    setLoading(true);
+    supabase
+      .from("alert_log")
+      .select("id, rule_name, triggered_at, outcome, action_taken, metadata")
+      .order("triggered_at", { ascending: false })
+      .limit(15)
+      .then(({ data }) => {
+        setAlerts((data ?? []) as AlertRow[]);
+        setLoading(false);
+      });
+  }, [open]);
+
+  function markAllRead() {
+    const ids = new Set<string>();
+    alerts.forEach((a) => ids.add(a.id));
+    setReadIds(ids);
+    toast.success("All notifications marked as read");
+  }
+
+  const unreadCount = mounted ? alerts.filter((a) => !readIds.has(a.id)).length : 0;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className="relative flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:text-ink-primary hover:bg-bg-raised transition-colors"
+          aria-label="Notifications"
+        >
+          <Bell className="h-4 w-4" />
+          {mounted && unreadCount > 0 && (
+            <span className="absolute top-1 right-1 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-signal-danger opacity-60" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-signal-danger" />
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className="w-80 p-0 bg-bg-surface border-border shadow-raised rounded-xl overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-ink-muted" />
+            <p className="text-sm font-semibold text-ink-primary">Notifications</p>
+            {unreadCount > 0 && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-signal-danger/10 text-signal-danger">
+                {unreadCount}
+              </span>
+            )}
+          </div>
+          {alerts.length > 0 && (
+            <button
+              onClick={markAllRead}
+              className="text-[11px] text-pilot-400 hover:underline"
+            >
+              Mark all read
+            </button>
+          )}
+        </div>
+
+        {/* List */}
+        <div className="max-h-[360px] overflow-y-auto divide-y divide-border">
+          {loading ? (
+            <div className="py-10 flex items-center justify-center">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-pilot-500 border-t-transparent" />
+            </div>
+          ) : alerts.length === 0 ? (
+            <div className="py-10 text-center space-y-1">
+              <Bell className="h-6 w-6 text-ink-muted/30 mx-auto" />
+              <p className="text-sm text-ink-muted">No notifications yet</p>
+            </div>
+          ) : (
+            alerts.map((alert) => {
+              const isRead = readIds.has(alert.id);
+              const Icon = OUTCOME_ICON[alert.outcome] ?? Zap;
+              const colors = OUTCOME_COLOR[alert.outcome] ?? "text-ink-muted bg-bg-muted";
+
+              return (
+                <div
+                  key={alert.id}
+                  onClick={() => setReadIds((prev) => { const s = new Set(prev); s.add(alert.id); return s; })}
+                  className={cn(
+                    "flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-bg-raised transition-colors",
+                    !isRead && "bg-pilot-500/[0.03]",
+                  )}
+                >
+                  <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg mt-0.5", colors)}>
+                    <Icon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-0.5">
+                    <p className={cn("text-xs font-medium text-ink-primary leading-snug", !isRead && "font-semibold")}>
+                      {alert.rule_name}
+                    </p>
+                    {alert.action_taken && (
+                      <p className="text-[11px] text-ink-secondary truncate">{alert.action_taken}</p>
+                    )}
+                    <p className="text-[10px] text-ink-muted">
+                      {formatDistanceToNow(new Date(alert.triggered_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                  {!isRead && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-pilot-500 shrink-0 mt-2" />
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-border px-4 py-2.5">
+          <a
+            href="/automation"
+            className="text-xs text-pilot-400 hover:underline flex items-center gap-1"
+          >
+            View automation rules & full log →
+          </a>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 // CommandPalette is now in src/components/shell/command-palette.tsx
 // — opened via commandPaletteEvents.open() from the search button
 
@@ -257,7 +433,6 @@ function BalancePill() {
 export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [hasNotifications] = useState(true); // static for MVP
   const [userName, setUserName] = useState("User");
 
   useEffect(() => {
@@ -324,15 +499,7 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
           <BalancePill />
 
           {/* Notifications */}
-          <button
-            className="relative flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:text-ink-primary hover:bg-bg-raised transition-colors"
-            aria-label="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-            {hasNotifications && (
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-signal-danger ring-1 ring-bg-base" />
-            )}
-          </button>
+          <NotificationPanel />
 
           {/* Theme toggle */}
           <ThemeToggle />

@@ -8,6 +8,7 @@ import {
   type RecoveryContext,
   type RecoveryLanguage,
 } from "@/lib/ai/prompts";
+import { env } from "@/lib/env";
 import { DraftRecoveryRequestSchema } from "@/lib/ai/schemas";
 
 export async function POST(req: NextRequest) {
@@ -57,12 +58,14 @@ export async function POST(req: NextRequest) {
     );
 
     // ── Build context ────────────────────────────────────────────────────────
+    const cardPaymentLink = `${env.MPGS_RETURN_URL_BASE}/pay/${invoice.id as string}`;
     const ctx: RecoveryContext = {
       invoice: {
         invoiceNumber: invoice.invoice_number as string,
         amount: Number(invoice.amount),
         daysOverdue,
         justpayLink: (invoice.justpay_link as string | null) ?? null,
+        cardPaymentLink,
       },
       client: {
         name: (client as { name: string }).name,

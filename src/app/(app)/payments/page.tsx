@@ -16,6 +16,7 @@ import {
   Clock,
   AlertTriangle,
   Plus,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -151,6 +152,75 @@ const BANKS = [
 const DEFAULT_DEST_ACCOUNT = "12345678";
 const DEFAULT_DEST_BANK = "6990";
 
+// ─── Card (MPGS) tab ─────────────────────────────────────────────────────────
+
+const CARD_STATS = [
+  { label: "Received this month", value: "LKR 0" },
+  { label: "Success rate",        value: "—" },
+  { label: "Avg transaction",     value: "—" },
+];
+
+function CardTab() {
+  return (
+    <div className="space-y-5">
+      {/* Stat tiles */}
+      <div className="grid grid-cols-3 gap-3">
+        {CARD_STATS.map((s) => (
+          <div key={s.label} className="bg-surface border border-border rounded-xl p-4">
+            <p className="text-xs text-ink-muted mb-1">{s.label}</p>
+            <p className="text-xl font-display font-semibold text-ink-primary">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Table placeholder */}
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-ink-muted" />
+            <p className="text-sm font-medium text-ink-primary">Card payments</p>
+          </div>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-pilot-500/10 text-pilot-400 font-semibold tracking-wider">
+            MPGS
+          </span>
+        </div>
+        <div className="px-5 py-12 text-center">
+          <CreditCard className="h-10 w-10 text-ink-muted/30 mx-auto mb-3" />
+          <p className="text-sm text-ink-secondary font-medium">No card payments yet</p>
+          <p className="text-xs text-ink-muted mt-1 max-w-xs mx-auto">
+            Customers can pay invoices by Visa or Mastercard using the link in Recovery Center messages.
+          </p>
+        </div>
+      </div>
+
+      {/* How it works */}
+      <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
+        <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider">How card payments work</p>
+        <div className="space-y-2">
+          {[
+            "Open Recovery Center for any overdue invoice",
+            "Copy the Card payment link from the Payment Links section",
+            "Share it in your recovery message — clients pay with any Visa or Mastercard",
+            "Payment is verified by Mastercard Payment Gateway · Seylan Bank",
+            "Invoice status updates to Paid automatically",
+          ].map((step, i) => (
+            <div key={i} className="flex items-start gap-3 text-xs text-ink-secondary">
+              <span className="shrink-0 h-4 w-4 rounded-full bg-pilot-500/20 text-pilot-400 flex items-center justify-center text-[9px] font-bold mt-0.5">
+                {i + 1}
+              </span>
+              <span>{step}</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 pt-1 border-t border-border text-xs text-ink-muted">
+          <Info className="h-3.5 w-3.5 shrink-0" />
+          Test card: 5123 4500 0000 0008 · Expiry 05/30 · CVV 123
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface CEFTSResult {
   status: "completed" | "failed" | "pending";
   externalRef?: string;
@@ -163,11 +233,12 @@ interface CEFTSResult {
   error?: string;
 }
 
-type PaymentTab = "cefts" | "justpay" | "qr" | "lpopp";
+type PaymentTab = "cefts" | "justpay" | "card" | "qr" | "lpopp";
 
 const PAYMENT_TABS: { key: PaymentTab; label: string; icon: React.ElementType }[] = [
   { key: "cefts",   label: "CEFTS Transfers", icon: Send },
   { key: "justpay", label: "JustPay Links",   icon: LinkIcon },
+  { key: "card",    label: "Card (MPGS)",     icon: CreditCard },
   { key: "qr",      label: "QR Codes",        icon: QrCode },
   { key: "lpopp",   label: "Govt Payments",   icon: FileText },
 ];
@@ -291,6 +362,8 @@ export default function PaymentsPage() {
 
       {/* Tab: JustPay */}
       {activeTab === "justpay" && <JustPayTab />}
+      {/* Tab: Card (MPGS) */}
+      {activeTab === "card" && <CardTab />}
       {/* Tab: QR */}
       {activeTab === "qr" && <QrCodesTab />}
       {/* Tab: LPOPP */}

@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   AlertCircle,
@@ -91,11 +92,26 @@ const NAV: NavSection[] = [
   },
 ];
 
+// Flat list of all real (non-coming-soon) routes for prefetching at sidebar mount time.
+const ALL_ROUTES = NAV.flatMap((s) => s.items)
+  .filter((i) => !i.soon)
+  .map((i) => i.href);
+
 // ─── Nav item ──────────────────────────────────────────────────────────────
 
-function SidebarNavItem({ item }: { item: NavItem }) {
+function SidebarNavItem({
+  item,
+  pendingHref,
+  onNavigate,
+}: {
+  item: NavItem;
+  pendingHref: string | null;
+  onNavigate: (href: string) => void;
+}) {
   const pathname = usePathname();
+  const router = useRouter();
   const isActive = pathname === item.href;
+  const isPending = pendingHref === item.href && !isActive;
 
   if (item.soon) {
     return (
@@ -112,10 +128,13 @@ function SidebarNavItem({ item }: { item: NavItem }) {
   return (
     <Link
       href={item.href}
+      prefetch
+      onMouseEnter={() => router.prefetch(item.href)}
+      onClick={() => onNavigate(item.href)}
       className={cn(
         "flex items-center gap-2.5 py-1.5 rounded-md text-sm transition-colors",
         "px-3",
-        isActive
+        isActive || isPending
           ? [
               "-ml-px",
               "pl-[calc(0.75rem+1px)]",
@@ -127,6 +146,9 @@ function SidebarNavItem({ item }: { item: NavItem }) {
     >
       <item.icon className="h-4 w-4 shrink-0" />
       <span className="flex-1 truncate">{item.label}</span>
+      {isPending && (
+        <span className="h-1.5 w-1.5 rounded-full bg-pilot-500 animate-pulse" />
+      )}
     </Link>
   );
 }
@@ -134,6 +156,37 @@ function SidebarNavItem({ item }: { item: NavItem }) {
 // ─── Sidebar inner content ─────────────────────────────────────────────────
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  // Prefetch every route at mount — clicks become near-instant.
+  useEffect(() => {
+    ALL_ROUTES.forEach((href) => router.prefetch(href));
+  }, [router]);
+
+  // Clear pending state once route resolves OR transition ends.
+  useEffect(() => {
+    if (pendingHref && pathname === pendingHref) setPendingHref(null);
+  }, [pathname, pendingHref]);
+
+  useEffect(() => {
+    if (!isPending && pendingHref) {
+      const t = setTimeout(() => setPendingHref(null), 100);
+      return () => clearTimeout(t);
+    }
+  }, [isPending, pendingHref]);
+
+  function handleNavigate(href: string) {
+    if (href === pathname) return;
+    setPendingHref(href);
+    startTransition(() => {
+      router.push(href);
+    });
+    if (onClose) setTimeout(onClose, 50);
+  }
+
   return (
     <div className="flex flex-col h-full bg-bg-surface overflow-y-auto">
       {/* ── Logo ──────────────────────────────────────────────────────── */}
@@ -184,9 +237,12 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             </p>
             <div className="space-y-0.5">
               {section.items.map((item) => (
-                <div key={item.href} onClick={onClose}>
-                  <SidebarNavItem item={item} />
-                </div>
+                <SidebarNavItem
+                  key={item.href}
+                  item={item}
+                  pendingHref={pendingHref}
+                  onNavigate={handleNavigate}
+                />
               ))}
             </div>
           </div>
@@ -198,7 +254,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
 // ─── Main sidebar ──────────────────────────────────────────────────────────
 
-export function Sidebar({ onMobileClose }: { onMobileClose?: () => void }) {
+export function Sidebar() {
   return (
     <aside className="hidden md:flex w-64 shrink-0 flex-col h-screen border-r border-border-subtle overflow-y-auto">
       <SidebarContent />

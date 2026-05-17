@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/topnav";
 import { ActivityTicker } from "@/components/layout/activity-ticker";
+import { NavProgress } from "@/components/layout/nav-progress";
 
 // ── Lazy-loaded overlays ──────────────────────────────────────────────────────
 // These are NOT needed on first paint — load them after the page is visible.
@@ -51,6 +52,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg-base">
+      {/* Top-of-page nav progress bar — shows instant click feedback */}
+      <Suspense fallback={null}>
+        <NavProgress />
+      </Suspense>
+
       {/* Desktop sidebar */}
       <Sidebar />
 

@@ -115,6 +115,11 @@ escalation stage:
 
 Keep messages short (3-4 sentences max). Always include: invoice number, amount in LKR,
 and a call-to-action. Never threaten legal action at stage 1 or 2.
+
+When BOTH a JustPay link AND a card payment link are provided, offer BOTH options clearly:
+  - JustPay link for Seylan Bank customers (instant, free)
+  - Card payment link for Visa/Mastercard (any bank, worldwide)
+Present them as a simple numbered choice, not as separate paragraphs.
 `.trim();
 
 export type RecoveryLanguage = "en" | "si" | "ta";
@@ -163,6 +168,7 @@ export interface RecoveryContext {
     amount: number;
     daysOverdue: number;
     justpayLink: string | null;
+    cardPaymentLink?: string | null;
   };
   client: {
     name: string;
@@ -176,9 +182,19 @@ export interface RecoveryContext {
 export function buildRecoveryUserPrompt(ctx: RecoveryContext): string {
   const { invoice, client, stage, language, businessName } = ctx;
   const langInstruction = LANGUAGE_INSTRUCTION[language];
-  const paymentLine = invoice.justpayLink
-    ? `Payment link: ${invoice.justpayLink}`
-    : "Ask them to make payment via CEFTS or bank transfer.";
+
+  let paymentLine: string;
+  if (invoice.justpayLink && invoice.cardPaymentLink) {
+    paymentLine = `Payment options (include BOTH in the message):
+  1. JustPay (Seylan customers, instant): ${invoice.justpayLink}
+  2. Card payment — Visa/Mastercard (any bank): ${invoice.cardPaymentLink}`;
+  } else if (invoice.justpayLink) {
+    paymentLine = `Payment link: ${invoice.justpayLink}`;
+  } else if (invoice.cardPaymentLink) {
+    paymentLine = `Card payment link: ${invoice.cardPaymentLink}`;
+  } else {
+    paymentLine = "Ask them to make payment via CEFTS or bank transfer.";
+  }
 
   return `
 ${langInstruction ? langInstruction + "\n\n" : ""}Language: ${language === "si" ? "Sinhala" : language === "ta" ? "Tamil" : "English"}

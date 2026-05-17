@@ -5,6 +5,7 @@ import {
   type InvoiceDetail,
   type RecoveryEntry,
 } from "./recovery-client";
+import { env } from "@/lib/env";
 
 interface Props {
   params: { invoiceId: string };
@@ -101,6 +102,8 @@ export default async function RecoveryPage({ params }: Props) {
     outcome: (r.outcome as string) ?? "pending",
   }));
 
+  const cardPaymentLink = `${env.MPGS_RETURN_URL_BASE}/pay/${invoice.id}`;
+
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
@@ -124,7 +127,7 @@ export default async function RecoveryPage({ params }: Props) {
         </a>
       </div>
 
-      <RecoveryClient invoice={invoice} history={history} />
+      <RecoveryClient invoice={invoice} history={history} cardPaymentLink={cardPaymentLink} />
     </div>
   );
 }

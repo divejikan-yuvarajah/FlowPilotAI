@@ -16,6 +16,8 @@ import {
   Clock,
   Send,
   AlertCircle,
+  Mail,
+  Smartphone,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -151,6 +153,76 @@ function WhatsAppPreview({ message, clientName, language }: { message: string; c
   );
 }
 
+// ─── SMS phone preview ────────────────────────────────────────────────────────
+
+function SMSPreview({
+  message,
+  phone,
+  language,
+}: {
+  message: string;
+  phone: string | null;
+  language: RecoveryLanguage;
+}) {
+  // SMS messages get truncated by carriers — show realistic 320-char limit warning.
+  const preview = message.slice(0, 480) + (message.length > 480 ? "…" : "");
+  const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const segments = Math.ceil((message.length || 1) / 160);
+
+  return (
+    <div className="flex justify-center py-2">
+      <div className="bg-[#111] rounded-[2.5rem] p-3 w-[260px] border border-white/10 shadow-2xl">
+        {/* Notch */}
+        <div className="flex justify-center mb-3">
+          <div className="bg-[#1a1a1a] h-4 w-24 rounded-full" />
+        </div>
+        {/* Screen */}
+        <div className="bg-white rounded-[1.75rem] overflow-hidden min-h-[220px]">
+          {/* iOS-style SMS header */}
+          <div className="bg-[#f6f6f6] px-3 py-2.5 flex items-center justify-between border-b border-black/5">
+            <span className="text-[#007AFF] text-[10px]">‹ Messages</span>
+            <div className="text-center">
+              <p className="text-black text-[10px] font-medium leading-none">Text Message</p>
+              <p className="text-black/40 text-[8px] mt-0.5">
+                {phone ? `+${phone.replace(/\D/g, "")}` : "Recipient"}
+              </p>
+            </div>
+            <span className="text-[#007AFF] text-[10px] opacity-0">‹</span>
+          </div>
+          {/* Message area */}
+          <div className="p-3 bg-white min-h-[140px] flex flex-col justify-end gap-1">
+            <p className="text-black/40 text-[8px] text-center mb-1">Today {time}</p>
+            <div className="flex justify-end">
+              <div className="bg-[#34C759] rounded-2xl rounded-br-sm px-3 py-2 max-w-[200px]">
+                <p
+                  className="text-white text-[10px] leading-relaxed whitespace-pre-wrap break-words"
+                  style={{
+                    fontFamily:
+                      language === "si"
+                        ? "'Noto Sans Sinhala', sans-serif"
+                        : language === "ta"
+                          ? "'Noto Sans Tamil', sans-serif"
+                          : undefined,
+                  }}
+                >
+                  {preview || "Generating message…"}
+                </p>
+              </div>
+            </div>
+            <p className="text-black/40 text-[8px] text-right mt-1">
+              Delivered · {segments} SMS segment{segments === 1 ? "" : "s"}
+            </p>
+          </div>
+        </div>
+        {/* Home bar */}
+        <div className="flex justify-center mt-3">
+          <div className="bg-white/20 h-1 w-16 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Recovery history timeline ────────────────────────────────────────────────
 
 function RecoveryHistoryCard({ entries }: { entries: RecoveryEntry[] }) {
@@ -274,9 +346,11 @@ function getTextareaFont(language: RecoveryLanguage): string {
 export function RecoveryClient({
   invoice,
   history,
+  cardPaymentLink,
 }: {
   invoice: InvoiceDetail;
   history: RecoveryEntry[];
+  cardPaymentLink?: string;
 }) {
   const { preferredLanguage, setPreferredLanguage } = useRecoveryStore();
 
@@ -402,6 +476,22 @@ export function RecoveryClient({
     const text = encodeURIComponent(message);
     const url = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
     window.open(url, "_blank");
+  }
+
+  function handleEmail() {
+    const to = invoice.client.email ?? "";
+    const subject = encodeURIComponent(`Invoice ${invoice.invoiceNumber} — Payment Reminder`);
+    const body = encodeURIComponent(message);
+    window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+  }
+
+  function handleSms() {
+    const phone = invoice.client.whatsappPhone?.replace(/\D/g, "") ?? "";
+    const body = encodeURIComponent(message);
+    // sms: URI works on mobile; on desktop most OSes will offer to open the
+    // configured handler (Phone Link on Windows 11, Messages on macOS).
+    const url = phone ? `sms:+${phone}?&body=${body}` : `sms:?&body=${body}`;
+    window.location.href = url;
   }
 
   function handleMarkDisputed() {
@@ -576,6 +666,16 @@ export function RecoveryClient({
             </div>
           )}
 
+          {channel === "sms" && !isGenerating && (
+            <div className="border-t border-border bg-bg-subtle py-4">
+              <SMSPreview
+                message={message}
+                phone={invoice.client.whatsappPhone}
+                language={language}
+              />
+            </div>
+          )}
+
           {/* Action bar */}
           <div className="flex items-center gap-2 px-4 py-3 border-t border-border bg-bg-subtle flex-wrap">
             <button
@@ -587,7 +687,7 @@ export function RecoveryClient({
               Copy
             </button>
 
-            {/* Pulsing WhatsApp CTA */}
+            {/* Channel-aware send button */}
             <motion.div
               animate={isFirstLoad
                 ? { boxShadow: ["0 0 0 0 hsl(243 75% 65% / 0.4)", "0 0 0 8px hsl(243 75% 65% / 0)", "0 0 0 0 hsl(243 75% 65% / 0)"] }
@@ -596,14 +696,36 @@ export function RecoveryClient({
               transition={{ duration: 1.2, repeat: isFirstLoad ? 3 : 0 }}
               className="rounded-lg"
             >
-              <button
-                onClick={handleWhatsApp}
-                disabled={!message || isGenerating}
-                className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white transition-colors disabled:opacity-40"
-              >
-                <MessageCircle className="h-4 w-4" />
-                Open in WhatsApp
-              </button>
+              {channel === "whatsapp" && (
+                <button
+                  onClick={handleWhatsApp}
+                  disabled={!message || isGenerating}
+                  className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white transition-colors disabled:opacity-40"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Open in WhatsApp
+                </button>
+              )}
+              {channel === "email" && (
+                <button
+                  onClick={handleEmail}
+                  disabled={!message || isGenerating}
+                  className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white transition-colors disabled:opacity-40"
+                >
+                  <Mail className="h-4 w-4" />
+                  Open email client
+                </button>
+              )}
+              {channel === "sms" && (
+                <button
+                  onClick={handleSms}
+                  disabled={!message || isGenerating}
+                  className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white transition-colors disabled:opacity-40"
+                >
+                  <Smartphone className="h-4 w-4" />
+                  Open SMS app
+                </button>
+              )}
             </motion.div>
 
             <button
@@ -666,22 +788,56 @@ export function RecoveryClient({
               </div>
             </div>
 
-            {/* JustPay link */}
-            <div className="space-y-1.5">
-              <p className="text-xs text-ink-tertiary uppercase tracking-wider font-medium">JustPay Link</p>
-              <div className="flex items-center gap-2 bg-bg-subtle rounded-lg px-3 py-2 border border-border">
-                <p className="flex-1 text-xs font-mono text-ink-secondary truncate">{justpayLink}</p>
-                <button
-                  onClick={handleCopyLink}
-                  className="shrink-0 text-ink-muted hover:text-ink-primary transition-colors"
-                >
-                  {copiedLink ? <Check className="h-3.5 w-3.5 text-signal-healthy" /> : <Copy className="h-3.5 w-3.5" />}
-                </button>
-                <a href={justpayLink} target="_blank" rel="noopener noreferrer"
-                  className="shrink-0 text-ink-muted hover:text-pilot-500 transition-colors">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
+            {/* Payment links */}
+            <div className="space-y-2">
+              <p className="text-xs text-ink-tertiary uppercase tracking-wider font-medium">Payment Links</p>
+
+              {/* JustPay */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-signal-ai/20 text-signal-ai">JustPay</span>
+                  <span className="text-[10px] text-ink-muted">Seylan customers</span>
+                </div>
+                <div className="flex items-center gap-2 bg-bg-subtle rounded-lg px-3 py-2 border border-border">
+                  <p className="flex-1 text-xs font-mono text-ink-secondary truncate">{justpayLink}</p>
+                  <button
+                    onClick={handleCopyLink}
+                    className="shrink-0 text-ink-muted hover:text-ink-primary transition-colors"
+                  >
+                    {copiedLink ? <Check className="h-3.5 w-3.5 text-signal-healthy" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                  <a href={justpayLink} target="_blank" rel="noopener noreferrer"
+                    className="shrink-0 text-ink-muted hover:text-pilot-500 transition-colors">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
               </div>
+
+              {/* Card (MPGS) */}
+              {cardPaymentLink && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-pilot-500/20 text-pilot-400">Card</span>
+                    <span className="text-[10px] text-ink-muted">Visa / Mastercard, worldwide</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-bg-subtle rounded-lg px-3 py-2 border border-border">
+                    <p className="flex-1 text-xs font-mono text-ink-secondary truncate">{cardPaymentLink}</p>
+                    <button
+                      onClick={() => {
+                        void navigator.clipboard.writeText(cardPaymentLink);
+                      }}
+                      className="shrink-0 text-ink-muted hover:text-ink-primary transition-colors"
+                      title="Copy card payment link"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                    <a href={cardPaymentLink} target="_blank" rel="noopener noreferrer"
+                      className="shrink-0 text-ink-muted hover:text-pilot-500 transition-colors">
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

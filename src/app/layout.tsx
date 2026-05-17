@@ -50,8 +50,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      {/* Noto Sans for Sinhala + Tamil glyph support in recovery messages */}
       <head>
+        {/* 🚀 Pre-warm DNS + TLS for Supabase so the first auth/data request
+            doesn't pay the connection cost — saves 100-300ms on initial nav. */}
+        {process.env.NEXT_PUBLIC_SUPABASE_URL && (
+          <>
+            <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />
+            <link
+              rel="preconnect"
+              href={process.env.NEXT_PUBLIC_SUPABASE_URL}
+              crossOrigin="anonymous"
+            />
+          </>
+        )}
+        {/* Google Fonts (Sinhala + Tamil) loaded async-style with preconnect first */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600&display=swap"
           rel="stylesheet"
