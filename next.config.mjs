@@ -48,6 +48,11 @@ const nextConfig = {
 
   // Strict React gives clearer dev warnings; doesn't affect production speed.
   reactStrictMode: true,
+
+  // Allow outbound server-side fetch to the Seylan sandbox (HTTP, not HTTPS).
+  // Vercel serverless functions run in Node.js — HTTP fetch works fine server-side.
+  // This flag prevents Next.js from warning about mixed-content in server components.
+  allowedDevOrigins: ["http://34.21.206.87:3000"],
 };
 
 export default nextConfig;

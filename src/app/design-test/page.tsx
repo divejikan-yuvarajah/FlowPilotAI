@@ -1,3 +1,6 @@
+// Disable static generation — this page renders live UI components
+export const dynamic = "force-dynamic";
+
 import { Clock, DollarSign, TrendingUp, AlertTriangle } from "lucide-react";
 import { StatTile } from "@/components/ui/stat-tile";
 import { SignalBadge } from "@/components/ui/signal-badge";

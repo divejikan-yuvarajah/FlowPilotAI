@@ -22,7 +22,10 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const PROD_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://flow-pilot-ai.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(PROD_URL),
   title: "FlowPilot AI · Financial OS for Sri Lankan SMEs",
   description:
     "Predict cash crises 22 days early. Recover payments automatically. Built on Seylan Bank APIs.",
