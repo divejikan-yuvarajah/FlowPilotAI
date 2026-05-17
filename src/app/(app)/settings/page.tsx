@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Bell, Building2, CheckCircle2, Clock,
   Shield,
-  User, Users, Wifi, Plus,
+  User, Users, Wifi, Plus, Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { SecurityClient } from "./security/security-client";
 
@@ -69,32 +71,110 @@ const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
 
 // ─── Profile tab ─────────────────────────────────────────────────────────────
 
-function ProfileTab() {
-  const [name,     setName]     = useState("Divejikan Yuvarajah");
-  const [biz,      setBiz]      = useState("Ceylon Tech Solutions");
-  const [industry, setIndustry] = useState("Technology");
-  const [revenue,  setRevenue]  = useState("1M–5M LKR/mo");
-  const [saved,    setSaved]    = useState(false);
+const REVENUE_BANDS = [
+  "< 500k LKR/mo", "500k – 1M LKR/mo", "1M – 5M LKR/mo",
+  "5M – 20M LKR/mo", "> 20M LKR/mo",
+];
 
-  function save() { setSaved(true); setTimeout(() => setSaved(false), 2000); }
+const DEFAULT_BIZ = "VOXVERSE STUDIO PVT LTD";
+
+function ProfileTab() {
+  const [loading,   setLoading]   = useState(true);
+  const [name,      setName]      = useState("");
+  const [email,     setEmail]     = useState("");
+  const [biz,       setBiz]       = useState("");
+  const [phone,     setPhone]     = useState("");
+  const [industry,  setIndustry]  = useState("");
+  const [revenue,   setRevenue]   = useState("");
+  const [saving,    setSaving]    = useState(false);
+  const [saved,     setSaved]     = useState(false);
+
+  const load = useCallback(async () => {
+    const supabase = createClient();
+    const { data } = await supabase.auth.getUser();
+    const u = data.user;
+    if (!u) { setLoading(false); return; }
+    const meta = (u.user_metadata ?? {}) as Record<string, string>;
+    setEmail(u.email ?? "");
+    setName(meta.owner_name ?? meta.full_name ?? "");
+    setBiz(meta.business_name ?? DEFAULT_BIZ);
+    setPhone(meta.phone ?? "");
+    setIndustry(meta.industry ?? "");
+    setRevenue(meta.revenue_band ?? "");
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  async function save() {
+    setSaving(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        owner_name: name,
+        business_name: biz,
+        phone,
+        industry,
+        revenue_band: revenue,
+      },
+    });
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    setSaved(true);
+    toast.success("Profile saved");
+    setTimeout(() => setSaved(false), 2500);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-5 w-5 animate-spin text-pilot-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       <SectionCard title="Business details">
+        {/* Business name with sample badge */}
+        <div className="py-3 border-b border-border">
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs text-ink-muted">Business name</label>
+            {biz === DEFAULT_BIZ && (
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-signal-watch/10 text-signal-watch border border-signal-watch/20">
+                Sample account
+              </span>
+            )}
+          </div>
+          <input
+            className="w-full bg-bg-inset border border-border rounded-lg px-3 py-2 text-sm text-ink-primary focus:outline-none focus:ring-1 focus:ring-pilot-500"
+            value={biz}
+            onChange={(e) => setBiz(e.target.value)}
+          />
+        </div>
+
         {[
-          { label: "Business name",     value: biz,      set: setBiz },
-          { label: "Owner / contact",   value: name,     set: setName },
-          { label: "Industry",          value: industry, set: setIndustry },
-        ].map(({ label, value, set }) => (
+          { label: "Owner / contact name", value: name,    set: setName,    type: "text"  },
+          { label: "Email address",        value: email,   set: setEmail,   type: "email", readOnly: true },
+          { label: "Phone number",         value: phone,   set: setPhone,   type: "tel"   },
+          { label: "Industry",             value: industry,set: setIndustry,type: "text"  },
+        ].map(({ label, value, set, type, readOnly }) => (
           <div key={label} className="py-3 border-b border-border last:border-0">
             <label className="text-xs text-ink-muted block mb-1">{label}</label>
             <input
-              className="w-full bg-bg-inset border border-border rounded-lg px-3 py-2 text-sm text-ink-primary focus:outline-none focus:ring-1 focus:ring-pilot-500"
+              type={type}
+              readOnly={readOnly}
+              className={cn(
+                "w-full bg-bg-inset border border-border rounded-lg px-3 py-2 text-sm text-ink-primary focus:outline-none focus:ring-1 focus:ring-pilot-500",
+                readOnly && "opacity-60 cursor-not-allowed",
+              )}
               value={value}
-              onChange={(e) => set(e.target.value)}
+              onChange={(e) => !readOnly && (set as (v: string) => void)(e.target.value)}
             />
+            {readOnly && <p className="text-[10px] text-ink-muted mt-0.5">Email cannot be changed here</p>}
           </div>
         ))}
+
         <div className="py-3">
           <label className="text-xs text-ink-muted block mb-1">Monthly revenue band</label>
           <select
@@ -102,18 +182,19 @@ function ProfileTab() {
             value={revenue}
             onChange={(e) => setRevenue(e.target.value)}
           >
-            {["< 500k LKR/mo", "500k–1M LKR/mo", "1M–5M LKR/mo", "5M–20M LKR/mo", "> 20M LKR/mo"].map((r) => (
-              <option key={r}>{r}</option>
-            ))}
+            <option value="">— Select —</option>
+            {REVENUE_BANDS.map((r) => <option key={r}>{r}</option>)}
           </select>
         </div>
       </SectionCard>
+
       <button
         onClick={save}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white text-sm font-semibold transition-all"
+        disabled={saving}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-pilot-500 hover:bg-pilot-600 text-white text-sm font-semibold transition-all disabled:opacity-60"
       >
-        {saved ? <CheckCircle2 className="h-4 w-4" /> : null}
-        {saved ? "Saved!" : "Save changes"}
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <CheckCircle2 className="h-4 w-4" /> : null}
+        {saving ? "Saving…" : saved ? "Saved!" : "Save changes"}
       </button>
     </div>
   );
@@ -131,11 +212,11 @@ function SeylanTab() {
             <span className="text-sm text-signal-healthy font-medium">Connected</span>
           </div>
         </SettingRow>
-        <SettingRow label="Account number" sub="Masked for security">
+        <SettingRow label="Account number" sub="Masked for security · via Seylan API">
           <span className="font-mono text-sm text-ink-primary">****1234</span>
         </SettingRow>
         <SettingRow label="Account holder" sub="Verified">
-          <span className="text-sm text-ink-secondary">Ceylon Tech Solutions</span>
+          <span className="text-sm text-ink-secondary">{DEFAULT_BIZ}</span>
         </SettingRow>
         <SettingRow label="Last synced" sub="Balance + transactions">
           <span className="text-sm text-ink-muted flex items-center gap-1">
@@ -213,18 +294,41 @@ function NotificationsTab() {
 // ─── Team tab ─────────────────────────────────────────────────────────────────
 
 function TeamTab() {
+  const [ownerName,  setOwnerName]  = useState("");
+  const [ownerEmail, setOwnerEmail] = useState("");
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      const meta = (data.user?.user_metadata ?? {}) as Record<string, string>;
+      setOwnerName(meta.owner_name ?? meta.full_name ?? "Account Owner");
+      setOwnerEmail(data.user?.email ?? "");
+    });
+  }, []);
+
+  const initials = ownerName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "AB";
+
   return (
     <div className="space-y-4">
       <SectionCard title="Team members">
         <div className="flex items-center gap-4 py-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pilot-500/20">
-            <User className="h-4 w-4 text-pilot-400" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pilot-500 text-white text-xs font-bold">
+            {initials}
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-ink-primary">Divejikan Yuvarajah</p>
-            <p className="text-xs text-ink-muted">divejikan@ceylontech.lk · Owner</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-ink-primary truncate">
+              {ownerName || <span className="text-ink-muted italic">Loading…</span>}
+            </p>
+            <p className="text-xs text-ink-muted truncate">{ownerEmail} · Owner</p>
           </div>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-pilot-500/10 text-pilot-400 border border-pilot-500/20">Admin</span>
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-pilot-500/10 text-pilot-400 border border-pilot-500/20 shrink-0">
+            Admin
+          </span>
         </div>
       </SectionCard>
       <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-dashed border-border text-sm font-medium text-ink-muted hover:border-pilot-500/40 hover:text-pilot-400 transition-colors w-full justify-center">

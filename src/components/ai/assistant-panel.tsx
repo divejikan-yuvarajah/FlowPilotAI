@@ -87,12 +87,28 @@ function MessageBubble({
         )}
       >
         {isEmpty ? (
-          <span className="text-ink-muted text-xs">Thinking…</span>
+          <span className="inline-flex items-center gap-[4px] py-1">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="inline-block h-2 w-2 rounded-full bg-pilot-400"
+                style={{ animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }}
+              />
+            ))}
+          </span>
         ) : (
           <div className="space-y-0.5">
             {renderMarkdown(message.content)}
             {!isUser && isStreaming && (
-              <span className="inline-block w-1.5 h-3.5 bg-pilot-400 animate-pulse ml-0.5 align-middle" />
+              <span className="inline-flex items-center gap-[3px] ml-1 align-middle">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="inline-block h-1.5 w-1.5 rounded-full bg-pilot-400"
+                    style={{ animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }}
+                  />
+                ))}
+              </span>
             )}
           </div>
         )}

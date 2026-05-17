@@ -592,7 +592,15 @@ export function RecoveryClient({
                     />
                     {/* Typing cursor */}
                     {message.length > 0 && isGenerating && (
-                      <span className="animate-pulse text-signal-ai">▌</span>
+                      <span className="inline-flex items-center gap-[3px] ml-1">
+                        {[0, 1, 2].map((i) => (
+                          <span
+                            key={i}
+                            className="inline-block h-1.5 w-1.5 rounded-full bg-signal-ai"
+                            style={{ animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }}
+                          />
+                        ))}
+                      </span>
                     )}
                   </motion.div>
                 )}
