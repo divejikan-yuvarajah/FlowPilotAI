@@ -1,8 +1,13 @@
+import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * Keep the Supabase auth session fresh on every request and forward updated
+ * auth cookies to the browser. Without this, OAuth/magic-link sessions appear
+ * to "vanish" after a few minutes because the access token isn't refreshed.
+ */
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,40 +19,30 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
+            request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({ request });
+          response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            response.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
-  // Refresh the session — must happen before any redirects
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Touching getUser() triggers a token refresh if needed and writes any
+  // updated cookies onto `response` via the setAll() adapter above.
+  await supabase.auth.getUser();
 
-  // Redirect unauthenticated users away from protected /app/* routes
-  if (!user && request.nextUrl.pathname.startsWith("/app")) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/sign-in";
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  return supabaseResponse;
+  return response;
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
-     * - _next/static  (static files)
-     * - _next/image   (image optimisation)
-     * - favicon.ico   (favicon)
-     * - public files  (images, etc.)
+     * Run on every page request except:
+     *   - Next.js internals (_next/static, _next/image, favicon)
+     *   - Public asset files (.svg, .png, .jpg, .ico, etc.)
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
