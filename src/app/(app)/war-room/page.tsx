@@ -71,6 +71,7 @@ export default async function WarRoomPage() {
     supabase
       .from("invoices")
       .select("id, invoice_number, amount, due_date, risk_score, clients(name, trust_score, risk_tier)")
+      .eq("user_id", user.id)
       .eq("status", "overdue")
       .order("risk_score", { ascending: false, nullsFirst: false })
       .order("due_date", { ascending: true })
@@ -85,6 +86,7 @@ export default async function WarRoomPage() {
     supabase
       .from("alert_log")
       .select("id, rule_name, triggered_at, outcome, action_taken, channel, metadata")
+      .eq("user_id", user.id)
       .order("triggered_at", { ascending: false })
       .limit(5),
     supabase

@@ -274,11 +274,29 @@ export async function ensureSeeded(userId: string): Promise<EnsureSeededResult> 
   const db = createAdminClient();
 
   // ── Idempotency check ──
-  const { data: existingClients } = await db
-    .from("clients").select("id").eq("user_id", userId).limit(1);
-  if (existingClients && existingClients.length > 0) {
+  // Verify a COMPLETE seed by checking for overdue invoices specifically.
+  // If clients exist but no overdue invoices the previous seed was partial —
+  // clear all user demo data and re-seed fresh.
+  const { data: existingOverdue } = await db
+    .from("invoices")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "overdue")
+    .limit(1);
+  if (existingOverdue && existingOverdue.length > 0) {
     return { seeded: false, reason: "already-seeded" };
   }
+
+  // Clean up any partial data before seeding (sequential to respect FK order)
+  await db.from("supplier_obligations").delete().eq("user_id", userId);
+  await db.from("suppliers").delete().eq("user_id", userId);
+  await db.from("alert_log").delete().eq("user_id", userId);
+  await db.from("cfo_briefs").delete().eq("user_id", userId);
+  await db.from("automation_rules").delete().eq("user_id", userId);
+  await db.from("expense_baselines").delete().eq("user_id", userId);
+  await db.from("invoices").delete().eq("user_id", userId);
+  await db.from("transactions").delete().eq("user_id", userId);
+  await db.from("clients").delete().eq("user_id", userId);
 
   // ── STEP 1: Clients (10) ──
   const { data: insertedClients, error: clientErr } = await db

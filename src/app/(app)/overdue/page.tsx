@@ -37,6 +37,7 @@ export default async function OverduePage() {
         whatsapp_phone
       )
     `)
+    .eq("user_id", user.id)
     .or(`status.eq.overdue,and(due_date.lt.${today},status.neq.paid)`)
     .order("risk_score", { ascending: false, nullsFirst: false })
     .order("due_date", { ascending: true });
