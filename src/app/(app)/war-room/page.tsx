@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { seylan } from "@/lib/seylan/client";
 import { calculateRunway } from "@/lib/engines/runway-model";
 import { calculateHealthScore } from "@/lib/engines/health-score";
+import { ensureSeeded } from "@/lib/seed/auto-seed";
 import type { SeylanTransaction } from "@/lib/seylan/types";
 import { WarRoomClient, type WarRoomData } from "./war-room-client";
 import type { ChartPoint } from "@/components/charts/runway-area-chart";
@@ -55,6 +56,9 @@ export default async function WarRoomPage() {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
+
+  // Auto-seed demo data on first visit (idempotent — exits in ~50ms if already seeded)
+  await ensureSeeded(user.id);
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
 

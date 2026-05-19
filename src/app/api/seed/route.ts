@@ -1,9 +1,13 @@
 /**
- * FlowPilot AI — Demo Data Seeder
+ * FlowPilot AI — Demo Data Seeder (rich version with AI + Seylan calls)
  * POST /api/seed
  *
- * Seeds a full demo dataset for the authenticated user.
- * Protected: requires valid session + DEV/PREVIEW env only.
+ * Seeds a full demo dataset for the authenticated user with AI-generated
+ * risk reasoning, live Seylan JustPay links, and pre-warmed AI cache.
+ *
+ * For fast auto-seed on first login, see `src/lib/seed/auto-seed.ts`.
+ *
+ * Protected: requires valid session.
  * Idempotent: safe to call multiple times (returns 200 if already seeded).
  */
 
@@ -13,12 +17,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { seylan } from "@/lib/seylan/client";
 import getFixtureTransactions from "@/lib/seylan/fixtures/transactions";
 import type { SeylanTransaction } from "@/lib/seylan/types";
-
-// ─── Guards ───────────────────────────────────────────────────────────────────
-
-function isProductionEnv(): boolean {
-  return process.env.VERCEL_ENV === "production";
-}
 
 // ─── OpenRouter helper ────────────────────────────────────────────────────────
 
@@ -274,10 +272,6 @@ function buildAdditionalTransactions(userId: string) {
 // ─── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST() {
-  if (isProductionEnv()) {
-    return NextResponse.json({ error: "Seeder is disabled in production" }, { status: 403 });
-  }
-
   // Auth check
   const sessionClient = await createServerClient();
   const { data: { user }, error: authError } = await sessionClient.auth.getUser();
