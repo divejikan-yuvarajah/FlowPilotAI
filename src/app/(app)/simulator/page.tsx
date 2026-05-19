@@ -15,7 +15,7 @@ function addDays(date: Date, days: number): Date {
 }
 
 export default async function SimulatorPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 

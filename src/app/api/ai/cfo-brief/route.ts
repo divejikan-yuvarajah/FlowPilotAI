@@ -16,7 +16,7 @@ import type { SeylanTransaction } from "@/lib/seylan/types";
 export async function POST(req: NextRequest) {
   try {
     // ── Auth ────────────────────────────────────────────────────────────────
-    const session = createServerClient();
+    const session = await createServerClient();
     const { data: { user }, error: authErr } = await session.auth.getUser();
     if (authErr || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

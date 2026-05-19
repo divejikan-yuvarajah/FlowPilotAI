@@ -35,7 +35,7 @@ export async function POST() {
     );
   }
 
-  const sessionClient = createServerClient();
+  const sessionClient = await createServerClient();
   const {
     data: { user },
     error: authError,

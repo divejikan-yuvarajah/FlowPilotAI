@@ -24,7 +24,7 @@ import {
 export async function POST(req: NextRequest) {
   try {
     // ── Auth ──────────────────────────────────────────────────────────────────
-    const session = createServerClient();
+    const session = await createServerClient();
     const {
       data: { user },
       error: authErr,
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
 
     const cacheKey = `supplier-analysis:${supplierId}`;
     const result = await callOpenRouter({
-      model: "mistralai/mistral-7b-instruct",
+      model: "gpt-4o-mini",
       systemPrompt: SUPPLIER_ANALYSIS_SYSTEM,
       userPrompt: buildSupplierAnalysisUserPrompt(ctx),
       cacheKey,

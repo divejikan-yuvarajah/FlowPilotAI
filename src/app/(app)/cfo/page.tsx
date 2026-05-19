@@ -87,7 +87,7 @@ function buildBurnTrend(
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function CfoDashboardPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 

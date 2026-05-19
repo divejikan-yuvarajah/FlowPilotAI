@@ -36,7 +36,7 @@ function label(d: Date): string {
 export const metadata = { title: "Cash Flow Timeline — FlowPilot AI" };
 
 export default async function TimelinePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 

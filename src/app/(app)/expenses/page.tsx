@@ -41,7 +41,7 @@ export interface VendorSummary {
 }
 
 export default async function ExpensesPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },

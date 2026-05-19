@@ -9,6 +9,9 @@ const envSchema = z.object({
   // ─── OpenAI ──────────────────────────────────────────────────────────────
   OPENAI_API_KEY: z.string().min(1).startsWith("sk-"),
 
+  // ─── Vercel Cron ─────────────────────────────────────────────────────────
+  CRON_SECRET: z.string().min(1).optional(),
+
   // ─── Seylan Bank sandbox ─────────────────────────────────────────────────
   SEYLAN_API_BASE_URL: z.string().url().default("http://34.21.206.87:3000"),
   SEYLAN_API_KEY: z.string().min(1),

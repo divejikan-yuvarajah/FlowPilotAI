@@ -5,7 +5,7 @@ import { AutomationClient, type AutomationRule, type AlertLogEntry } from "./aut
 export const metadata = { title: "Automation Rules — FlowPilot AI" };
 
 export default async function AutomationPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 

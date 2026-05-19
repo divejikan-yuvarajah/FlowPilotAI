@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default async function RecoveryPage({ params }: Props) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
@@ -131,3 +131,4 @@ export default async function RecoveryPage({ params }: Props) {
     </div>
   );
 }
+

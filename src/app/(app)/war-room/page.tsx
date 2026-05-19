@@ -51,7 +51,7 @@ function buildChartData(
 // ─── Page ─────────────────────────────────────────────────────────────────
 
 export default async function WarRoomPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");

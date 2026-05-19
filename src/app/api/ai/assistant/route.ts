@@ -33,7 +33,7 @@ const RequestSchema = z.object({
 
 // ─── Context builder ──────────────────────────────────────────────────────────
 
-async function buildContext(userId: string, supabase: ReturnType<typeof createServerClient>) {
+async function buildContext(userId: string, supabase: Awaited<ReturnType<typeof createServerClient>>) {
   const today = new Date().toISOString().split("T")[0];
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
   const fourteenDaysFromNow = new Date(Date.now() + 14 * 86_400_000).toISOString().split("T")[0];
@@ -54,6 +54,7 @@ async function buildContext(userId: string, supabase: ReturnType<typeof createSe
     supabase
       .from("invoices")
       .select("invoice_number, amount, due_date, risk_score, clients(name, trust_score, trust_trend, risk_tier)")
+      .eq("user_id", userId)
       .in("status", ["overdue"])
       .order("risk_score", { ascending: false, nullsFirst: false })
       .limit(10),
@@ -79,6 +80,7 @@ async function buildContext(userId: string, supabase: ReturnType<typeof createSe
     supabase
       .from("alert_log")
       .select("rule_name, action_taken, triggered_at, outcome")
+      .eq("user_id", userId)
       .order("triggered_at", { ascending: false })
       .limit(5),
     supabase
@@ -276,7 +278,7 @@ async function buildContext(userId: string, supabase: ReturnType<typeof createSe
 export async function POST(req: NextRequest) {
   try {
     // Auth
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
     if (authErr || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

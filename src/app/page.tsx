@@ -7,7 +7,7 @@ import { LandingPage } from "./(marketing)/landing-client";
  * Authenticated users are forwarded straight to the War Room.
  */
 export default async function RootPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

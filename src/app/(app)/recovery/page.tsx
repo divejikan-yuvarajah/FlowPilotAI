@@ -17,7 +17,7 @@ export default async function RecoveryCenterPage({
   }
 
   // Fetch overdue invoices so the user can pick one
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 

@@ -4,7 +4,7 @@ import { OverdueClient } from "./overdue-client";
 import type { OverdueInvoiceData } from "@/components/invoices/overdue-card";
 
 export default async function OverduePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
